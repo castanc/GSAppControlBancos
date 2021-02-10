@@ -1,0 +1,30 @@
+            let lines = data2.get("GLUC").split("\n");
+            let grid = range.getValues();
+            grid = grid.filter(x => x[5] == "GLUC");
+            let grid2;
+            for (var i = 0; i < lines.length; i++) {
+                let c = lines[i].split("\t");
+                if (c.length > 4) {
+                    let dateParts = c[0].split(" ");
+                    let value = c[4];
+                    dt = Utils.getDateFromDMY(dateParts[0]);
+                    days = Utils.getDays(dt);
+                    let minutes = Utils.getMinutes(dateParts[1]);
+
+                    grid2 = grid.filter(x => x[3] == days.toString() &&
+                        x[4] == minutes.toString());
+
+                    if (grid2.length == 0) {
+                        data2.update("ID", id.toString());
+                        data2.update("ROW", lastRow.toString());
+                        data2.update("DAYS", days.toString());
+                        data2.update("MINUTES", minutes.toString());
+                        data2.update("GLUC", value);
+                        let v = data2.getColValues();
+                        sheet.appendRow(v);
+                        id++;
+                        lastRow++;
+                    }
+                }
+            }
+            this.updateId("Id", id);

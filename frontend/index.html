@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>GSApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_top">
+  <!-- 
+        https://www.w3schools.com/bootstrap4/bootstrap_get_started.asp        
+    -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+  <!-- jQuery library -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <!-- Popper JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+  <!-- Latest compiled JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+    integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+</head>
+<?!= include('frontend/stylesheet'); ?>
+<?!= include('frontend/js_model'); ?>
+<?!= include('frontend/js_utils'); ?>
+<?!= include('frontend/js_moment'); ?>
+<?!= include('frontend/js_index'); ?>
+
+
+<body class="big-font">
+  <div class="container-fluid">
+    <div class="big-font">
+      <?!= include('frontend/navbar2'); ?>
+    </div>
+    <div id="spinner" class="spinner-border text-primary" id="spinner" role="status" style="display:none;">
+      <span class="sr-only">Loading...</span>
+    </div>
+
+    <div id="mainContent">
+      <form id="myForm">
+
+        <div id="DIVfechaHora">
+          <div class="row">
+            <div class="col-md text-responsive">
+              <label for="FECHA">Fecha</label>
+            </div>
+
+            <div class="col-md text-responsive">
+              <input type="date" class="form-control big-font" id="FECHA" name="FECHA" 
+              placeholder="Fecha" required
+              onblur="onBlurField(this.id,this.value)">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md text-responsive">
+              <label for="HORA">Hora</label>
+            </div>
+            <div class="col-md">
+              <input type="time" id="HORA" name="HORA" placeholder="HH:MM"
+                pattern="^([0-1]?[0-9]|2[0-4]):([0-5][0-9])(:[0-5][0-9])?$" class="inputs time big-font" 
+                style="color: black;"
+                required
+                onblur="onBlurField(this.id,this.value)"
+                >
+            </div>
+          </div>
+        </div>
+
+        <div id="DIVrecType" class="row">
+          <div id="REC_TYPE" class="col-md"> </div>
+        </div>
+    </div>
+  </div>
+
+  <div id="content"></div>
+  </div>
+
+  <div id="chart" class="row">
+
+  </div>
+
+  <div id="report">
+  </div>
+
+  <div class="row-fat">
+    <hr>
+  </div>
+  </form>
+  </div>
+  <div id="DIVchildContent">
+    <div id="rows"></div>
+  </div>
+  </div>
+
+  <div class="footer-wrapper flex-shrink-0 p-10 text-center bg-content">
+
+    <div class="footer">
+      <div id="result" class="container h4 mb-4 text-info text-center"></div>
+      <div id="error" class="container h4 mb-4 text-danger"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalPopUp" class="modal fade" id="exampleModal" tabindex="-1" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Modal title</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="modalBody">
+
+          </div>
+        </div>
+        <div class="row" id="fileInfo">
+        </div>
+    
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    <?!= getDataDeclarations("Items"); ?>
+    <?!= getItems(); ?>
+  </script>
+</body>
+
+</html>

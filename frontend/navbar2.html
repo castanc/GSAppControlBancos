@@ -1,0 +1,56 @@
+<div id="menu" class="big-font row">
+    <div class="col-md-3">
+        <button type="button" class="btn btn-primary btn-block big-font"
+            onclick="enableMenu('adminMenu','reportMenu')">Admin</button>
+    </div>
+    <div class="col-md-3">
+        <button type="button" class="btn btn-primary btn-block big-font" onclick="generalReport()">Reporte</button>
+    </div>
+    <div class="col-md-3">
+        <button type="button" class="btn btn-secondary btn-block big-font" onclick="cancelSubmit()">Nuevo</button>
+    </div>
+    <div class="col-md-3" id="submitArea">
+        <button id="btnSubmit" type="button" class="btn btn-success btn-block big-font"
+            onclick="processForm()">Guardar</button>
+    </div>
+
+    <div class="col-md-3" id="reportArea">
+        <button id="btnReport" type="button" class="btn btn-success btn-block big-font"
+            onclick="loadReport()">Report</button>
+    </div>
+
+
+</div>
+
+<div class="row big-font" id="adminMenu">
+    <div class="row">
+        <hr>
+    </div>
+    <div class="col-md-12">
+        <a href="https://drive.google.com/drive/folders/1jzmBSoUT6JpiCt80A1tedzg2BzXX6HNz">App Drive Folder</a>
+        <a href="https://docs.google.com/spreadsheets/d/1B57O5eaKszh_IIq2zosA7SDDqQmRPCqVIK9i2ccm7zQ/edit#gid=0">App
+            Logs</a>
+      <button type="button" class="btn btn-primary big-font" onclick="clearLocalStorage()">Borrar Datos Locales</button>
+    </div>
+</div>
+<div class="row big-font" id="reportMenu">
+    <div class="row">
+        <hr>
+    </div>
+    <div class="col-md-12">
+        <button type="button" class="btn btn-primary big-font" onclick="reportYear()">Reporte Año</button>
+        <button type="button" class="btn btn-primary big-font" onclick="reportMes()">Reporte Mes</button>
+        <button type="button" class="btn btn-primary big-font" onclick="generalReport()">Reporte</button>
+    </div>
+</div>
+<div class="row">
+    <hr>
+</div>
+
+<div class="row">
+    <hr>
+    <div class="col-md-12">
+        <p id="title" class="text-success text-center text-responsive">Control Dinero Juan</p>
+        <p id="subTitle" class="text-success text-center"></p>
+    </div>
+</div>

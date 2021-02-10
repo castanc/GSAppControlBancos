@@ -1,0 +1,1642 @@
+<script>
+    let dt = new Date();
+    let recType = "";
+    let cache = new KVPCollection();
+    let Data = new KVPCollection();
+    let logLevel = 0;
+    let logs = [];
+    let record = {};
+    let records = [];
+    let requiredFields = "";
+    let response;
+    let confirming = false;
+    let htmlRecType = "";
+    let htmlRecTypeFilter = "";
+    let formChanged = false;
+    let master;
+    let master2 = [[]];
+    let detail;
+    let title = "Control Bancos";
+    let gettingInfo = false;
+    let lastUrl = "";
+    let htmlMediosPago = "";
+    let htmlMonedas = "";
+
+    let days = "Todos,Dom,Lun,Mar,Mie,Jue,Vie,Sab,Dom".split(",");
+    let dow = [
+        [0, "Domingo"],
+        [1, "Lunes"],
+        [2, "Martes"],
+        [3, "Miercoles"],
+        [4, "Jueves"],
+        [5, "Viernes"],
+        [6, "Sabado"],
+    ]
+
+    let selectedDOW = dow;
+    let months = "Todos,Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic".split(",");
+    let recTypes = "";
+    let filterRT = "";
+    let filterMes = "";
+    let filterDia = "";
+    let fecha = "";
+    let year = 2021;
+    let desde = 1;
+    let hasta = 31;
+    let editMode = false;
+    let glucLevelsText = `0,59,"blueviolet";60,89,"green";90,99,"yellow";100,119,"red";120,139,"slateblue";140,159,"navy";160,179,"darkmagenta";180,999,"darkblue"`;
+    let minG = 0;
+    let maxG = 999;
+    let sortDescending = false;
+    let countGluc = 0;
+    let action = "";
+    let minutes1 = 0;
+    let minutes2 = 0;
+    let glucMin = 0;
+    let glucMax = 300;
+    let horaDesde = "00:00";
+    let horaHasta = "11:59";
+    let openIds = ",";
+    let openId = 0;
+    let subtitle = "";
+    let fechaDesde = "";
+    let overrideLocalStorage = false;
+
+
+
+
+
+
+
+
+
+    function addLog(title, text, method = "", obj = "", show = false, level = 0) {
+        let lm = new LogMessage();
+        lm.text = text;
+        lm.obj = obj;
+        lm.title = title;
+        if (method != null && method.length > 0) {
+            if (method.indexOf("()" < 0))
+                method = `${method}()`;
+            logs = [];
+            LogMessage.method = method;
+        }
+
+        logs.push(lm);
+        if (show)
+            log(level);
+    }
+
+
+
+    function replace(text, value, newValue) {
+        try {
+            while (text.indexOf(value) >= 0)
+                text = text.replace(value, newValue);
+        }
+        catch (ex) {
+        }
+        return text;
+    }
+
+    function log(level) {
+
+        if (level == logLevel || level == 9999) {
+
+            let row = "";
+            let json = "";
+            for (var i = 0; i < logs.length; i++) {
+                row = `${row}
+                 <tr><td>${LogMessage.method}</td><td>${logs[i].title}</td><td>${logs[i].text}</td></tr>
+                `;
+                console.log(LogMessage.method, logs[i].text);
+                console.log(logs[i].obj);
+            }
+            let table = `<table>${row}</table>`;
+            writeInnerHtml("result", table);
+            sessionStorage.setItem("lastLog", JSON.stringify(logs));
+        }
+
+
+
+    }
+
+    function setRecord(i, value) {
+        if (i < records.length) {
+            records[i].cant = Number(value);
+        }
+    }
+
+    function setTime(i, value) {
+        if (i < records.length) {
+            records[i].time = value;
+        }
+
+    }
+
+
+
+
+    function getIcon(recType) {
+        let icon = "";
+        if (recType == "FOOD") icon = "fa fa-utensils";
+        else if (recType == "DRUG") icon = "fa fa-medkit";
+        else if (recType == "EXE") icon = "fas fa-swimmer";
+        else if (recType == "PRS") icon = "fa fa-stethoscope";
+        else if (recType == "WEIGHT") icon = "fas fa-weight";
+        else if (recType == "GLUC") icon = "fa fa-heart";
+        else if (recType == "EVENT") icon = "calendar-plus";
+        return icon;
+    }
+
+    function getColor(recType) {
+        let color = "";
+        if (recType == "FOOD") color = "brown";
+        else if (recType == "DRUG") color = "fa fa-medkit";
+        else if (recType == "EXE") color = "darkgreen";
+        else if (recType == "PRS") color = "darkmagenta";
+        else if (recType == "WEIGHT") color = "deepskyblue";
+        else if (recType == "GLUC") color = "darkred";
+        else if (recType == "EVENT") color = "blue";
+        return color;
+    }
+
+    function getHtmlSelectFromNamedArray(name, caption = "", arr, cssClass = "",
+        idCol = 0, valueCol = 1, required = false) {
+        let onChange = "";
+        let requiredText = "";
+
+        if (required)
+            requiredText = "required";
+
+        name = name.trim();
+
+        if (caption.length == 0)
+            caption = "None";
+
+        var options = `<option value="">${caption}</option>`
+        arr.forEach(item => {
+            options = options + `<option value="${item[idCol]}">${item[valueCol]}</option>`;
+        });
+
+        onChange = `onChange="onChange_${name}('${name}',this.options[this.selectedIndex].value)"`;
+
+        return `<select id="SELECT_${name}" name="SELECT_${name}" 
+            class="${cssClass}"
+            ${onChange} ${required}>${options}</select>`;
+
+    }
+
+    function getHtmlFromArray(name, caption = "", list, required = false) {
+        let onChange = "";
+        let requiredText = "";
+
+        if (required)
+            requiredText = "required";
+
+        name = name.trim();
+
+        if (caption.length == 0)
+            caption = "None";
+
+        var options = "";   //`< option selected > ${caption} < /option>`;
+        for (var i = 0; i < list.length; i++) {
+            options = options + `<option value="${i}">${list[i]}</option>`;
+        }
+        onChange = `onChange="onChange_${name}('${name}',this.options[this.selectedIndex].value)"`;
+        return `<select id="SELECTID" name="SELECTID" ${onChange} ${required}>${options}</select>`;
+
+    }
+
+    function geSimpleHtmlFromArray(name, caption = "", list, required = false) {
+        let onChange = "";
+        let requiredText = "";
+
+        if (required)
+            requiredText = "required";
+
+        name = name.trim();
+
+        if (caption.length == 0)
+            caption = "None";
+
+        var options = "";   //`< option selected > ${caption} < /option>`;
+        for (var i = 0; i < list.length; i++) {
+            options = options + `<option value="${list[i]}}">${list[i]}</option>`;
+        }
+        onChange = `onChange="onChange_${name}('${name}',this.options[this.selectedIndex].value)"`;
+        return `<select id="SELECTID" name="SELECTID" ${onChange} ${required}>${options}</select>`;
+
+    }
+
+    //https://stackoverflow.com/questions/16096872/how-to-sort-2-dimensional-array-by-column-value
+
+    function sortFunction0(a, b) {
+
+        if (a[3] === b[3]) {
+            return 0;
+        }
+        else {
+            if (sortDescending)
+                return (a[3] > b[3]) ? -1 : 1;
+            else
+                return (a[3] < b[3]) ? -1 : 1;
+        }
+    }
+
+    function buildDate(dt, hora) {
+
+        try {
+            let d = dt.split("-");
+            let h = hora.split(":");
+
+            return new Date(
+                Number(d[0]),
+                Number(d[1]) - 1,
+                Number(d[2]),
+                Number(h[0]),
+                Number(h[1]),
+                0
+            );
+
+
+        }
+        catch (ex) {
+            console.log("buildDate()", ex.message);
+            return new Date(1900, 0, 1);
+        }
+    }
+
+    function sortFunction(a, b) {
+
+        let date1 = buildDate(a[10], a[11]);
+        let date2 = buildDate(b[10], b[11]);
+
+        if (date1 === date2) {
+            return 0;
+        }
+        else {
+            if (sortDescending)
+                return (date1 > date2) ? -1 : 1;
+            else
+                return (date1 < date2) ? -1 : 1;
+        }
+    }
+
+
+
+
+    function renderFoodItemsReadOnly(div = "rows") {
+        let row = "";
+        let delIcon = "";
+        let inputFields = "";
+        if (records.length > 0) {
+
+            row = `<div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-2"></div>
+            <div class="col-md-3">Cant</div>
+            <div class="col-md-1">Un</div>
+            <div class="col-md-4">Food Item</div>
+            </div>
+            `;
+
+            if (records[0].url === undefined) {
+                records.forEach(record => {
+                    let fItem = FoodItems.arr.filter(x => x[1] == record.itemId);
+
+                    if (fItem.length > 0) {
+                        record.descr = fItem[2];
+                        record.unit = fItem[4];
+                        record.url = fItem[9];
+                    }
+                })
+            }
+
+            for (var i = 0; i < records.length; i++) {
+                row = `${row}
+            <div class="row">
+                <div class="col-md-2">
+                    <img src="${records[i].url}" class="thumb"></img>
+                    </div>
+                <div class="col-md-2 cursorPointer"><i class="fas fa-trash-alt"  onclick="removeItem('${DrugItems}',${i})"></i></div>
+                <div class="col-md-3">
+                    <input type="number" id="q{${i}} name="q${i}" placeholder="Cant" value="${records[i].cant}" onchange="setRecord(${i},this.value)">
+                </div>
+                <div class="col-md-1">
+                    ${records[i].unit}
+                </div>
+                <div class="col-md-4">${records[i].descr}</div>
+
+            </div>`;
+            }
+        }
+        writeInnerHtml(div, row);
+
+    }
+
+
+    function renderRecords(title) {
+        let row = `<div class="row">
+            <div class="col-2">Remove</div>
+            <div class="col-5">${title}</div>
+            <div class="col-2">Cant</div>
+            <div class="col-2">Unidades</div>
+            <div class="col-1">Image</div>
+            </div>`;
+
+        for (var i = 0; i < records.length; i++) {
+            row = `${row}
+            <div class="row">
+            <div class="col-2"><btn type="button" class ="btn tbn-danger">Remove</button></div>
+            <div class="col-5">${records[i].descr}</div>
+            <div class="col-2"><input type="number" id="q{${i}} name="q${i}" placeholder="Cant" value = "${records[i].cant}" class="form-control"></div>
+            <div class="col-2">${records[i].unit}</div>
+            <div class="col-1"><img src="${records[i].url}" class="rounded img-fluid"></img></div>
+            </div>            
+            `;
+        }
+        writeInnerHtml("rows", row);
+    }
+
+    function renderRecords2(div = "rows") {
+        let row = "";
+        let delIcon = "";
+        let inputFields = "";
+        if (records.length > 0) {
+
+            row = "";
+
+            for (var i = 0; i < records.length; i++) {
+                row = `${row}
+            <div class="row">
+                <div class="col-md-1"></div>
+                <div class="col-md-2">
+                    <img src="${records[i].url}" class="thumb"></img>
+                </div>
+                <div class="col-md-8">
+                    ${records[i].cant} ${records[i].unit} ${records[i].descr} 
+                </div>
+                <div class="col-md-1"></div>
+            </div>`;
+            }
+            writeInnerHtml(div, row);
+            showDiv(div);
+        }
+    }
+
+
+
+
+
+
+    function openDetail(recType, id) {
+        if (",FOOD,EXE,DRUG,".indexOf(recType) < 0)
+            return;
+
+        if (openId > 0) {
+            hideDiv(`detail${openId}`);
+            openId = 0;
+        }
+
+        if (openIds.indexOf(`,${id},`) > 0) {
+            showDiv(`detail${id}`);
+            openId = id;
+            return;
+        }
+        records = [];
+        let details = detail.filter(x => x[1] == id);
+        details.forEach(det => {
+            record = new RecordItem();
+            record.itemId = det[3];
+            record.cant = det[4];
+
+            let rItem;
+            if (recType == "FOOD") {
+                rItem = FoodItems.arr.filter(x => x[1] == record.itemId);
+                if (rItem.length > 0) {
+                    record.descr = rItem[0][2];
+                    record.unit = rItem[0][4];
+                    record.url = rItem[0][9];
+                }
+                else {
+                    let m = master.filter(x => x[1] == id);
+                    if (m.length > 0) {
+                        record.descr = m[0][12];
+                        record.unit = "";
+                        record.url = "";
+                    }
+                }
+            }
+            else if (recType == "DRUG") {
+                rItem = DrugItems.arr.filter(x => x[0] == record.itemId);
+                if (rItem.length > 0) {
+                    record.descr = rItem[0][1];
+                    record.unit = rItem[0][3];
+                    record.url = rItem[0][4];
+                }
+
+            }
+            else if (recType == "EXE") {
+                rItem = ExeItems.arr.filter(x => x[0] == record.itemId);
+                if (rItem.length > 0) {
+                    record.descr = rItem[0][1];
+                    record.unit = rItem[0][4];
+                    record.url = "";
+                }
+
+            }
+            records.push(record);
+        });
+        openIds = `${openIds},${id}`;
+        renderRecords2(`detail${id}`);
+        openId = id;
+    }
+
+
+    function buildRecords(recType, id, defValue = "") {
+        if (",FOOD,EXE,DRUG,".indexOf(recType) < 0)
+            return defValue;
+
+        result = defValue;
+        if (",EXE,DRUG,".indexOf(recType) > 0)
+            result = "";
+
+        let ri;
+        if (recType == "FOOD") {
+            let mt = Items.arr.filter(x => x[0] = "MT" && x[1] == defValue);
+            if (mt.length > 0) {
+                result = `${mt[0][2]}:`
+            }
+        }
+
+        let arr = detail.filter(x => x[1] == id);
+        arr.forEach(item => {
+            if (recType == "FOOD") {
+                ri = FoodItems.arr.filter(x => x[1] == item[3])
+                ri.forEach(detail => {
+                    result = `${result} ${detail[0]},`;
+                })
+
+            }
+            else if (recType == "DRUG") {
+                ri = DrugItems.arr.filter(x => x[0] == item[3])
+                ri.forEach(detail => {
+                    result = `${result} ${detail[1].toUpperCase()},`;
+                })
+
+            }
+            else if (recType == "EXE") {
+                ri = ExeItems.arr.filter(x => x[0] == item[3])
+                ri.forEach(detail => {
+                    result = `${result} ${detail[1]} ${item[4]} ${item[5]},`;
+                })
+
+            }
+        })
+        return result;
+    }
+
+    function sort() {
+        showDiv("spinner");
+        sortDescending = !sortDescending;
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+    function sortArray(arr, col, desc = true) {
+        return arr.sort(sortFunction);
+
+    }
+
+    function filtrar() {
+        showDiv("spinner");
+        horaDesde = Data.get("HORA_DESDE");
+        horaHasta = Data.get("HORA_HASTA");
+        minutes1 = getMinutes(horaDesde);
+        minutes2 = getMinutes(horaHasta);
+        let x = Data.getNumber("GLUC_DESDE");
+        glucMin = x;
+        x = Data.getNumber("GLUC_HASTA");
+        glucMax = x;
+        console.log("Data", Data);
+        console.log(`filtrar() ${horaDesde} ${horaHasta} ${glucMin} ${glucMax},x:${x}`);
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+
+
+    function closeedit() {
+        editMode = false;
+        clearDiv("content");
+        master = [[]];
+        detail = [[]];
+        newRecord();
+    }
+
+
+
+    function drawChart() {
+        let fontSize = "font-size:22px;";
+        let color = "color:white;";
+        let style = `style="${fontSize} ${color}"`;
+        let percText = "";
+        let totalPerc = 0;
+        let count = 0;
+
+        let html = `<div class="row" ${style}><div class="col-md-2">
+            Rango</div>
+            <div class="col-md-1" ${style}>
+                Cant</div>
+            <div class="col-md-9" ${style}>%</div></div>`;
+
+        GlucLevels.forEach(item => {
+            count += item.count;
+        });
+
+        GlucLevels.forEach(item => {
+            let x = (item.count / count) * 100;
+            totalPerc += x;
+            percText = `${(parseFloat(x).toFixed(0) + "%")}`;
+            style = `style="background-color: ${item.backgroundColor}; width: ${x * 10}px"`;
+
+            html = `${html}<div class="row" style="${fontSize} ${color}">`;
+
+            html = `${html}
+            <div class="col-md-2" style="background-color: ${item.backgroundColor};">
+                ${item.min}->${item.max}
+            </div>
+            <div class="col-md-1" style="background-color: ${item.backgroundColor};">
+                ${item.count} 
+            </div>`
+
+            if (item.count > 0) {
+                html = `${html}
+                <div class="col-md-9">
+                <div ${style}>${percText}</div>
+                </div>`
+            }
+            html = `${html}</div>`;
+
+        })
+        style = `style="${fontSize} ${color}"`;;
+        percText = `${(parseFloat(totalPerc).toFixed(0) + "%")}`;
+        html = `${html}<div class="row" ${style}">
+            <div class="col-md-2">
+                Totales
+            </div>
+            <div class="col-md-1" >
+                ${count} 
+            </div>
+            <div class="col-md-1">
+                ${percText}
+            </div>  
+            <div class="col-md-8">
+            </div>             
+        </div>`;
+
+
+
+        return html;
+
+
+    }
+
+    function buildFiltros() {
+        let fontSize = "font-size:22px;";
+        let color = "color:white;";
+        let style = `style="${fontSize} ${color}"`;
+
+        let filtros = `
+            <div ${style}>
+                <div class="row">
+                    <hr>
+                </div>
+                <div class="row">
+                    <p class="text-center">Filtros</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        Hora
+                    </div>
+                    <div class="col-md-5 big-font">
+                        <input type="time" class="form-control big-font" id="HORA_DESDE" name="HORA_DESDE" 
+                        oninput="onInputField(this.id,this.value)"> 
+                    </div>
+                    <div class="col-md-5 big-font">
+                        <input type="time" class="form-control big-font"  id="HORA_HASTA" name="HORA_HASTA" 
+                        oninput="onInputField(this.id,this.value)"> 
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2">
+                        Gluc
+                    </div>
+                    <div class="col-md-5 big-font">
+                        <input type="number" class="form-control big-font" id="GLUC_DESDE" name="GLUC_DESDE" 
+                        oninput="onInputField(this.id,this.value)"> 
+                    </div>
+                    <div class="col-md-5 big-font">
+                        <input type="number" class="form-control big-font" id="GLUC_HASTA" name="GLUC_HASTA" 
+                        oninput="onInputField(this.id,this.value)"> 
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        Registro
+                    </div>
+                    <div class="col-md-10 big-font">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        Dia
+                    </div>
+                    <div class="col-md-10 big-font">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                    </div>
+                    <div class="col-md-1">
+                        <i class="fas fa-filter fa-3x"  onclick="filtrar()"></i>
+                    </div>
+                    <div class="col-md-1">
+                        <i class="fas fa-sort fa-3x"  onclick="sort()"></i>
+                    </div>
+                    <div class="col-md-8"></div>
+                </div>
+            </div>`;
+        return filtros;
+
+    }
+    function getGlucTotals() {
+        let fontSize = "font-size:22px;";
+        let color = "color:white;";
+        let style = `style="${fontSize} ${color}"`;
+
+        let totalsHtml = "";
+        let chart = drawChart();
+
+        totalsHtml = `<div class="row"><hr></div>
+        <div class="row">
+            <div class="col-md-12">
+                <p class="text-info text-center">
+                Mediciones de Glucogeno ${subtitle}
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                ${chart}
+            </div>
+        </div>
+        ${buildFiltros()}
+        `;
+
+
+
+        return totalsHtml;
+    }
+
+    //https://gist.github.com/kparms/9486604
+    //THANKS!
+    function drawPercentBar(width, percent, color, background) {
+        var barhtml = "";
+        var pixels = width * (percent / 100);
+        if (!background) { background = "none"; }
+
+        barhtml = "<div style=\"position: relative; line-height: 1em; background-color: "
+            + background + "; border: 1px solid white; width: "
+            + width + "px\">";
+
+        barhtml += "<div style=\"height: 1.5em; width: " + pixels + "px; background-color: "
+            + color + ";\"></div>";
+
+        let textPercent = `${(parseFloat(percent).toFixed(0) + "%")}`;
+        barhtml += "<div style=\"position: absolute; text-align: center; padding-top: .25em; width: "
+            + width + "px; top: 0; left: 0\">" + textPercent + "</div>";
+
+        barhtml += "</div>";
+
+        return barhtml;
+    }
+
+
+    function renderMaster() {
+        let recType = "";
+        let classText = "";
+        let icon = "";
+        let iconColor = "";
+        let styleTag = "";
+        let fontSize = "font-size:22px;";
+        let color = "color:white;";
+        let style = `style="${fontSize} ${color}"`;
+
+        if (master == null) {
+            //show error
+            return;
+        }
+        if (master.lenght < 1)
+            return;
+
+        showDiv("content");
+        hideDiv("DIVrecType");
+        hideDiv("SELECT_RT");
+
+        let row = `<div style="font-size:32px;">
+            <hr>
+            <div class="row">
+            <div class="col-md-1"></div>
+            <div class="col-md-1">Dia</div>
+            <div class="col-md-2">Fecha</div>
+            <div class="col-md-2">Hora</div>
+            <div class="col-md-6">Data</div>
+            </div>
+            `;
+
+        if (master.length > 0) {
+
+            let master2;
+            if (filterRT != "") {
+                master2 = master.filter(x => x[9] = filterRT);
+                master2 = sortArray(master2, 3);
+            }
+            else {
+                master2 = sortArray(master, 3);
+            }
+
+            GlucLevels.forEach(item => {
+                item.count = 0;
+                item.acumulado = 0;
+            })
+
+            let divRecords = "";
+            countGluc = 0;
+            for (var i = 0; i < master2.length; i++) {
+                if (master2[i].length < 9)
+                    continue;
+
+                recType = master2[i][9].trim();
+
+                if (recType == "GLUC") {
+                    if (master2[i][4] < minutes1 ||
+                        master2[i][4] > minutes2 ||
+                        master2[i][12] < glucMin ||
+                        master2[i][12] > glucMax)
+                        continue;
+                }
+
+                let rti = RecTypes.filter(x => x.name == recType);
+                icon = "";
+                iconColor = "";
+                styleTag = "";
+
+                if (rti.length > 0) {
+                    icon = rti[0].icon;
+                    iconColor = `color:${rti[0].textColor};`;
+                    styleTag = `style="${iconColor}"`;
+                }
+
+                if (icon == "")
+                    continue;
+
+                let iconTag = `<span style="font-size: 40px; ${iconColor}">
+                                    <i class="${icon}"></i>
+                                </span>`;
+                divRecords = buildRecords(recType, master2[i][1], master2[i][12]);
+
+                let value = master2[i][12];
+                if (recType == "GLUC") {
+                    countGluc++;
+                    let gl = GlucLevels.filter(x => value >= x.min && value < x.max);
+                    if (gl.length > 0) {
+                        styleTag = `style="background-color:${gl[0].backgroundColor};"`;
+                        gl[0].count++;
+                    }
+                }
+
+                row = `${row}
+                    <div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
+                        <div class="col-md-1">
+                            ${iconTag}
+                        </div>
+
+                        <div class="col-md-1" ${styleTag}>
+                            ${days[master2[i][8] + 1]} 
+                        </div>
+                        <div class="col-md-2" ${styleTag}>
+                        ${months[master2[i][6]]}-${master2[i][7]}
+                        </div>
+                        <div class="col-md-2" ${styleTag} >
+                        ${master2[i][11]}
+                        </div>
+                        <div id="data${master2[i][1]}" class="col-md-6" ${styleTag}>
+                            ${divRecords}
+                        </div>
+                    </div>
+                    <div id="detail${master2[i][1]}" class="row">
+                    </div>`;
+            }
+        }
+        row = `${row}</div>`;
+        countGluc--;
+        let glucTotalsHtml = getGlucTotals();
+        writeInnerHtml("btnReport", "Reporte");
+        writeInnerHtml("title", glucTotalsHtml);
+        writeInnerHtml("report", row);
+        setFilterData();
+    }
+
+
+
+
+    function renderDrugItems(div = "rows") {
+
+        let row = "";
+        if (records.length > 0) {
+
+            row = `<div class="row row-fat">
+                <div class="col-md-1"></div>
+            <div class="col-md-1"></div>
+            <div class="col-md-8">Drug Item</div>
+            <div class="col-md-2">Cant</div>
+            </div>
+            `;
+
+            for (var i = 0; i < records.length; i++) {
+                row = `${row}
+            <div class="row cursorPointer">
+                <div class="col-md-1">
+                    <img src="${records[i].url}" class="thumb"></img>
+                    </div>
+                <div class="col-md-1"><i class="fas fa-trash-alt"  onclick="removeDrug('${DrugItems}',${i})"></i></div>
+                <div class="col-md-8" >${records[i].descr}</div>
+                <div class="col-md-2">
+                    <input type="number" id="q{${i}} name="q${i}" placeholder="Cant" value="${records[i].cant}" onchange="setRecord(${i},this.value)">
+                </div>
+            </div>`;
+            }
+        }
+        writeInnerHtml(div, row);
+    }
+
+
+    function renderExeItems(div = "rows") {
+        let row = "";
+        if (records.length > 0) {
+
+            row = `<div class="row row-fat">
+            <div class="col-md-1"></div>
+            <div class="col-md-1"></div>
+            <div class="col-md-4">Sport</div>
+            <div class="col-md-1">Dist</div>
+            <div class="col-md-1">Un</div>
+            <div class="col-md-2">Time</div>
+            </div>
+            `;
+
+            for (var i = 0; i < records.length; i++) {
+                row = `${row}
+            <div class="row row-fat">
+                <div class="col-md-1"></div>
+                <div class="col-md-1 cursorPointer"><i class="fas fa-trash-alt"  onclick="removeExe('${DrugItems}',${i})"></i></div>
+                <div class="col-md-4">${records[i].descr}</div>
+                <div class="col-md-1">
+                    <input type="number" id="q{${i}} name="q${i}" placeholder="Dist" value="${records[i].cant}" onchange="setRecord(${i},this.value)">
+                </div>
+                <div class="col-md-2">
+                    ${records[i].unit}
+                </div>
+                <div class="col-md-3">
+                    <input type="number" id="h{${i}} name="t${i}" placeholder="HH:MM:SS" pattern="^([0-1]?[0-9]|2[0-4]):([0-5][0-9])(:[0-5][0-9])?$" value="${records[i].time}" onchange="setTime(${i},this.value)">
+                </div>
+            </div>`;
+            }
+        }
+        writeInnerHtml(div, row);
+    }
+
+
+
+    function getSelect(name, arr, idCol = 0, valueCol = 1, title = "", selectedValue = "", req = false, startRow = 0) {
+        let options = "";
+        let required = "";
+        let onChange = `onchange="onchange_${name}(this.options[this.selectedIndex].value)"`;
+
+        if (title.length == 0)
+            title = "Select...";
+
+        if (req)
+            required = "required";
+
+        options = `<option value="">${title}</option>`
+        for (var i = startRow; i < arr.length; i++) {
+            if (selectedValue != "" && arr[i][idCol] == selectedValue)
+                options = `${options}<option value="${arr[i][idCol]}" selected>${arr[i][valueCol]}</option>`
+            else
+                options = `${options}<option value="${arr[i][idCol]}">${arr[i][valueCol]}</option>`
+        }
+
+        let html = `<select name="SELECT_${name}" id="SELECT_${name}" ${required} ${onChange} class="big-font form-control">
+        ${options}</select>`
+
+        return html;
+
+    }
+
+    function getHtmlSelectFiltered(arr, controlId, title = "", value = "",
+        required = false, startRow = 0, idCol = 0, valueCol = 2) {
+        let html = this.getSelect(controlId, arr, idCol, valueCol, title, value, required);
+        return html;
+    }
+
+    function initializeData(colList) {
+        let c = colList.split(',');
+        Data = new KVPCollection();
+        for (var i = 0; i < c.length; i++) {
+            Data.add(c[i], "");
+        }
+    }
+
+    function initializeFormRecType() {
+        records = [];
+        if (recType == "BROU") {
+            requiredFields = "REC_TYPE,FECHA,HORA,EXTRACTO_BROU";
+            initializeData(requiredFields);
+        }
+        else if (recType == "EVENT") {
+            requiredFields = "REC_TYPE,FECHA,HORA,EVENTID,DETAILS";
+            initializeData(requiredFields);
+
+        }
+        if (recType == "JUAN") {
+            requiredFields = "REC_TYPE,FECHA,HORA,VALOR,MEDIO_PAGO,MONEDA,REFERENCIA,CONCEPTO,COMPROMISO,SLA,FECHA_RESOLUCION";
+            initializeData(requiredFields);
+        }
+    }
+
+    function processData(recType, data) {
+        console.log("data:", data);
+        initializeFormRecType();
+        Data.update("REC_TYPE", recType);
+
+        if (response.showModal) {
+            writeInnerHtml("modalBody", response.messages);
+            showDiv("modalPopUp");
+        }
+
+    }
+
+    function addFoodItem(itemId) {
+        record.itemId = itemId;
+        record.id = records.length;
+        records.push(record);
+        let row = `<tr><td>Food Item</td><td>Cant</td><td>Image</td></tr>`;
+        for (var i = 0; i < records.length; i++) {
+            row = `${row}
+      <tr><td>Food Item</td><td>Cant</td><td>Image</td></tr>`;
+        }
+    }
+
+
+    function onBlurField(id, value) {
+        console.log(`onBlurField() ${id} ${value}`);
+        Data.update(id, value);
+
+    }
+
+    function onChangeField(id, value) {
+        console.log(`onChangeField() ${id} ${value}`);
+        Data.update(id, value);
+
+    }
+
+    function onInputField(id, value) {
+        console.log(`onInputField() ${id} ${value}`);
+        Data.update(id, value);
+    }
+
+
+
+    function processResponSubmitForm(json) {
+        let msg = "Respuesta recibida del servidor.";
+        hideDiv("spinner");
+        showMessage(msg);
+        response = JSON.parse(json);
+        console.log("Response received from Server. processResponSubmitForm():", response);
+        if (response.result == 200) {
+            for (var i = 0; i < response.html.length; i++) {
+                writeInnerHtml(response.html[i].key, response.html[i].value)
+            }
+
+            msg = "";
+            for (var i = 0; i < response.messages.lenght; i++) {
+                msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
+            }
+            //writeInnerHtml("result", msg);
+            if (msg == "" && response.messages.lenght > 0) {
+                msg = response.messages[0];
+            }
+            showMessage(msg);
+            newRecord();
+        }
+        else {
+            let row = `<tr><td>Server Error</td><td>${response.result}</td></tr>`;
+            for (var i = 0; i < response.error.length; i++) {
+                row = `${row}<tr><td>${response.error[i].key}</td><td>${response.error[i].value}</td></tr>`;
+            }
+
+            let table = `<table>${row}</table>`;
+            writeInnerHtml("error", table);
+        }
+    }
+
+    function changeButtonText(btn, text) {
+        let changed = false;
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        if (currentText.toLowerCase().indexOf(text.toLowerCase()) < 0) {
+            currentText = `${text} ${currentText}`;
+            document.querySelector(`#${btn}`).innerHTML = currentText;
+            changed = true;
+        }
+        return changed;
+    }
+
+    function loadReport() {
+        showDiv("spinner");
+        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
+        disableButtons(true);
+        google.script.run.withFailureHandler(failureHandler)
+            .withSuccessHandler(processResponseReport)
+            .report(Data);
+    }
+
+    function processResponseGetFileInfo(json) {
+        processResponse(json);
+        Data.update("EXTRACTO_BROU", lastUrl);
+        hideDiv("spinner");
+        disableButtons(false);
+    }
+
+    function getFileInfo(id, url) {
+        onBlurField(id, url);
+        if (url.trim().toLowerCase().indexOf("https://") >= 0) {
+            showDiv("spinner");
+            disableButtons(true);
+            lastUrl = url;
+            google.script.run.withFailureHandler(failureHandler)
+                .withSuccessHandler(processResponseGetFileInfo)
+                .getFileInfo(url);
+        }
+        else
+            showError("Invalid url");
+        return;
+    }
+
+    function processForm() {
+        Data.update("REC_TYPE", recType);
+        console.log("Data", Data);
+        if (!confirming) {
+            //changeButtonText("submitMenu","Confirm ");
+            writeInnerHtml("btnSubmit", "Confirmar");
+            confirming = true;
+            return;
+        }
+        else {
+            writeInnerHtml("btnSubmit", "Guardar");
+            confirming = false;
+        }
+        gettingInfo = false;
+        if (document.forms["myForm"].checkValidity()) {
+            disableButtons(true);
+            showDiv("spinner");
+            showMessage("Enviando datos al Servidor...");
+            hideDiv("content");
+            hideDiv("rows");
+
+            showDiv("DIVfechaHora");
+            showDiv("DIVrecType");
+
+
+
+            Data.update("FECHA", getValue("FECHA"));
+            Data.update("HORA", getValue("HORA"));
+
+            //if ( recType == "BROU")
+            //    Data.update("EXTRACTO_BROU",getValue("EXTRACTO_BROU"));
+
+            console.log(Data);
+            console.log("Data", Data);
+            newRecord();
+
+            google.script.run.withFailureHandler(failureHandler)
+                .withSuccessHandler(processResponSubmitForm)
+                .processForm(Data, null);
+        }
+    }
+
+
+
+    function processResponseEdit(json) {
+        response = JSON.parse(json);
+
+        console.log("Response received from Server. processResponseEdit():", response);
+        if (response.result == 200) {
+            for (var i = 0; i < response.html.length; i++) {
+                writeInnerHtml(response.html[i].key, response.html[i].value)
+                localStorage.setItem(`${response.html[i].key}_${recType}`, response.html[i].value);
+            }
+
+            let msg = "";
+            for (var i = 0; i < response.messages.lenght; i++) {
+                msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
+            }
+            writeInnerHtml("result", msg);
+            //todo: show only if form modified
+            showDiv("submitArea");
+            master = response.master;
+            detail = response.detail;
+            renderMaster();
+        }
+        else {
+            let row = `<tr><td>Server Error</td><td>${response.result}</td></tr>`;
+            for (var i = 0; i < response.error.length; i++) {
+                row = `${row}<tr><td>${response.error[i].key}</td><td>${response.error[i].value}</td></tr>`;
+            }
+
+            let table = `<table>${row}</table>`;
+            writeInnerHtml("error", table);
+        }
+        hideDiv("spinner");
+    }
+
+
+    function processResponseReport(json) {
+        response = JSON.parse(json);
+
+        console.log("Response received from Server. processResponseReport():", response);
+        if (response.result == 200) {
+            for (var i = 0; i < response.html.length; i++) {
+                writeInnerHtml(response.html[i].key, response.html[i].value)
+                localStorage.setItem(`${response.html[i].key}_${recType}`, response.html[i].value);
+            }
+
+            let msg = "";
+            for (var i = 0; i < response.messages.lenght; i++) {
+                msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
+            }
+            writeInnerHtml("result", msg);
+            //todo: show only if form modified
+            master = response.master;
+            detail = response.detail;
+            minutes1 = getMinutes(Data.get("HORA_DESDE"));
+            minutes2 = getMinutes(Data.get("HORA_HASTA"));
+            disableButtons(false);
+            hideDiv("DIVfechaHora");
+            hideDiv("DIVrecType")
+            showDiv("reportArea");
+            renderMaster();
+            disableButtons(false);
+        }
+        else {
+            let row = `<tr><td>Server Error</td><td>${response.result}</td></tr>`;
+            for (var i = 0; i < response.error.length; i++) {
+                row = `${row}<tr><td>${response.error[i].key}</td><td>${response.error[i].value}</td></tr>`;
+            }
+
+            let table = `<table>${row}</table>`;
+            writeInnerHtml("error", table);
+        }
+        hideDiv("spinner");
+
+    }
+
+    function setValueAndData(fieldId, value) {
+        let x = document.getElementById(fieldId);
+        if (x != undefined) {
+            x.value = value;
+        }
+        else console.log(`setValueANdData() can't find ${fieldId} value:${value}`);
+        Data.update(fieldId, value);
+    }
+
+
+    function setReportDates() {
+
+        requiredFields = "FECHA_DESDE,FECHA_HASTA,HORA_DESE,HORA_HASTA,GLUC_DESDE,GLUC_HAST,REC_FILTER,DAY_FILTER";
+        initializeData(requiredFields);
+        hideDiv("submitArea");
+
+        dt = new Date();
+        let fecha = getDateYMD(dt);
+        setValueAndData("FECHA_HASTA", fecha);
+
+        let dt1 = new Date(dt.getFullYear(), 0, 1);
+        fecha = getDateYMD(dt1);
+        setValueAndData("FECHA_DESDE", fecha);
+
+        minutes1 = 0;
+        minutes2 = 12 * 60;
+
+    }
+
+    function setFilterData() {
+
+        //requiredFields = "HORA_DESDE,HORA_HASTA,GLUC_DESDE,GLUC_HASTA,DIA_SEMANA";
+        //initializeData(requiredFields);
+        hideDiv("submitArea");
+
+        setValueAndData("HORA_DESDE", horaDesde);
+        setValueAndData("HORA_HASTA", horaHasta);
+        setValueAndData("GLUC_DESDE", glucMin.toString());
+        setValueAndData("GLUC_HASTA", glucMax.toString());
+
+    }
+
+    function clearLocalStorage() {
+        localStorage.clear();
+        overrideLocalStorage = true;
+        newRecord();
+        showMessage("Datos locales han sido brorrados");
+    }
+
+    function processLogResponse(json) {
+
+    }
+    async function logServer(msg, data) {
+        google.script.run.withFailureHandler(failureHandler)
+            .withSuccessHandler(processLogResponse)
+            .log(msg, data);
+    }
+
+    function generalReport() {
+        console.log("generalReport()");
+        editMode = true;
+        action = "Report";
+        showDiv("spinner");
+        hideDiv("adminMenu");
+        hideDiv("DIVfechaHora");
+        hideDiv("DIVrecType");
+        hideDiv("submitArea");
+        hideDiv("rows");
+        recType = "REP";
+        writeInnerHtml("title", "Reporte por Rango de Fechas");
+
+        html = localStorage.getItem("content_REP");
+        if (html == null || html == undefined)
+            html = "";
+
+
+        //todo: if entry is not found is returning as if it exists
+        if (html.lenght == 0 || overrideLocalStorage) {
+            logServer("getting report html from", "server");
+            overrideLocalStorage = false;
+            google.script.run.withFailureHandler(failureHandler)
+                .withSuccessHandler(processResponseLoadReportForm)
+                .getForm("", "report");
+        }
+        else {
+            writeInnerHtml("content", html);
+            setReportDates();
+            setFilterData();
+            showDiv("reportArea");
+
+        }
+        hideDiv("spinner");
+
+    }
+
+    function reportYear() {
+        showDiv("spinner");
+        editMode = true;
+        setReportDates();
+
+        let fecha = getValue("FECHA");
+        let dt = getDateFromYMD(fecha);
+        let dtDesde = new Date(dt.getFullYear(), 0, 1);
+        Data.update("FECHA_DESDE", getDateYMD(dtDesde));
+
+        let dtHasta = new Date(dt.getFullYear(), 11, 31);
+
+
+        Data.update("FECHA_HASTA", getDateYMD(dtHasta));
+
+        action = "Report";
+        console.log("reportYear", Data);
+
+        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
+
+
+        google.script.run.withFailureHandler(failureHandler)
+            .withSuccessHandler(processResponseReport)
+            .report(Data);
+
+    }
+
+    function enableMenu(enable, disable) {
+        let d = disable.split(",");
+        d.forEach(item => {
+            hideDiv(item);
+        })
+        showDiv(enable);
+    }
+    function reportMes() {
+        showDiv("spinner");
+        editMode = true;
+        setReportDates();
+        let fecha = getValue("FECHA");
+        let dt = getDateFromYMD(fecha);
+        let dtDesde = new Date(dt.getFullYear(), dt.getMonth(), 1);
+        Data.update("FECHA_DESDE", getDateYMD(dtDesde));
+
+        let dtHasta = new Date();
+        if (dt.getMonth() < 11)
+            dtHasta = new Date(dt.getFullYear(), dt.getMonth() + 1, 1);
+        else
+            dtHasta = new Date(dt.getFullYear() + 1, 0, 1);
+
+        dtHasta.setDate(dtHasta.getDate() - 1);
+
+        console.log("dtHasta", Data, dtHasta);
+        Data.update("FECHA_HASTA", getDateYMD(dtHasta));
+
+        action = "Report";
+        console.log("reportMes", Data);
+        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
+
+
+        google.script.run.withFailureHandler(failureHandler)
+            .withSuccessHandler(processResponseReport)
+            .report(Data);
+
+    }
+
+
+
+
+    function processRTChange(json) {
+        processResponse(json);
+    }
+
+    function processResponse(json) {
+        response = JSON.parse(json);
+        console.log("processResponse() Response received from Server:", response);
+        console.log("Data", Data);
+        hideDiv("spinner");
+        if (response.result == 200) {
+            for (var i = 0; i < response.html.length; i++) {
+                writeInnerHtml(response.html[i].key, response.html[i].value)
+                localStorage.setItem(`${response.html[i].key}_${recType}`, response.html[i].value);
+            }
+
+            let msg = "";
+            for (var i = 0; i < response.messages.lenght; i++) {
+                msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
+            }
+            writeInnerHtml("result", msg);
+            //todo: show only if form modified
+            processData(recType, response.data);
+            showDiv("submitArea");
+            gettingInfo = false;
+
+        }
+        else {
+            let row = `<tr><td>Server Error</td><td>${response.result}</td></tr>`;
+            for (var i = 0; i < response.error.length; i++) {
+                row = `${row}<tr><td>${response.error[i].key}</td><td>${response.error[i].value}</td></tr>`;
+            }
+
+            let table = `<table>${row}</table>`;
+            writeInnerHtml("error", table);
+        }
+    }
+
+
+    function processResponseLoadReportForm(json) {
+        processResponse(json);
+        setReportDates();
+        setFilterData();
+        showDiv("reportArea");
+        disableButtons(false);
+
+    }
+
+
+
+    function refreshDate() {
+        dt = new Date();
+        var m = padLeft(dt.getMonth() + 1, 10, '0');
+        var d = padLeft(dt.getDate(), 10, '0');
+        var fecha = `${dt.getFullYear()}-${m}-${d}`;
+        var h = padLeft(dt.getHours(), 10, '0');
+        var mi = padLeft(dt.getMinutes(), 10, '0');
+        var hora = `${h}:${mi}`;
+
+        var dti = document.getElementById('FECHA');
+        dti.value = fecha;
+
+        dti = document.getElementById('HORA');
+        dti.value = hora;
+    }
+
+
+    function cancelSubmit() {
+        console.log("cancelSubmit()");
+        newRecord();
+    }
+
+    function newRecord() {
+        console.log("newRecord");
+        clearDiv("REPORT");
+        hideDiv("reportMenu");
+        hideDiv("adminMenu");
+        hideDiv("reportArea");
+        editMode = false;
+        writeInnerHtml("title", title);
+        formChanged = false;
+        confirming = false;
+        refreshDate();
+
+        writeInnerHtml("REC_TYPE", htmlRecType);
+        showDiv("DIVfechaHora");
+        showDiv("DIVrecType");
+        clearDiv("content");
+        clearDiv("rows");
+        clearDiv("report");
+        hideDiv("submitArea");
+        records = [];
+        recType = "";
+
+        disableButtons(false);
+        showMessage("Ready");
+        console.log("newRecord END");
+    }
+
+    function initialize() {
+        showMessage("© 2021 Cesar Castaño");
+        showDiv("spinner");
+        hideDiv("reportArea");
+        hideDiv("submitArea");
+        console.log("initialize");
+        console.log("Items");
+
+        let arr = Items.arr.filter(x => x[2] == "RT");
+        console.log("arr:", arr);
+        htmlRecType = getSelect("RT", arr, 3, 4, "Tipo Gasto", "", true);
+        writeInnerHtml("REC_TYPE", htmlRecType);
+        newRecord();
+
+
+        showMessage("Ready");
+
+        console.log("items.arr", Items.arr);
+        hideDiv("spinner");
+
+
+        setTimeout(function () {
+            // This hides the address bar:
+            window.scrollTo(0, 1);
+        }, 0);
+
+    }
+
+
+    //************************************ event handlers ***********************************
+    function failureHandler(error) {
+        hideDiv("spinner");
+        writeInnerHtml("error", error);
+    }
+
+
+    function successHandler(json) {
+        processResponse(json);
+    }
+
+
+
+
+    function clearRows() {
+        records = [];
+        clearDiv("rows");
+        showDiv("rows");
+    }
+
+    function onchange_SP(e) {
+        Data.update("SPORTID", e);
+    }
+
+    function onchange_RT(e) {
+        console.log("onchange_RT", e);
+        if (e == "")
+            return;
+
+
+
+        Data.update("REC_TYPE", e);
+        clearDiv("result");
+        clearDiv("error");
+        hideDiv("DIVfechaHora");
+        hideDiv("DIVrecType")
+        showDiv("content");
+        clearRows();
+
+
+
+        recType = e;
+        let html = "";
+        let = url = "";
+        records = [];
+        writeInnerHtml("rows", "");
+
+        html = localStorage.getItem(`content_${recType}`);
+        if (html == undefined)
+            html = "";
+
+        if (html.length == 0) {
+            console.log("getting form from server");
+            let row = Items.arr.filter(x => x[0] == "RT" && x[1] == recType);
+            if (row.length > 0)
+                url = row[3];
+
+
+            google.script.run.withFailureHandler(failureHandler).withSuccessHandler(processResponse)
+                .getForm("RT", recType, url);
+        }
+        else {
+            writeInnerHtml("content", html);
+            initializeFormRecType();
+            showDiv("submitArea");
+        }
+
+    }
+
+    function onchange_MT(e) {
+        Data.update("MEAL_TYPES", e);
+    }
+
+
+    function onchange_EV(e) {
+        Data.update("EVENTID", e);
+    }
+
+
+
+
+
+
+
+
+
+
+    function onSuccess(html) {
+        refreshDate();
+
+        var div = document.getElementById("formDiv");
+        div.innerHTML = html;
+
+
+        var select = document.getElementById("SELECT_REC_TYPE");
+        try {
+            if (select.options.length > 0)
+                loadContent(select.options[0].value)
+        }
+        catch (ex) {
+            console.log("exceptioon selecting first item", ex);
+        }
+    }
+
+    //************************************ event handlers end ***********************************
+
+    function close_DOW(id, obj) {
+        obj.style.display = "none";
+        selectedDOW = selectedDOW.filter(x => x[0] != id);
+    }
+
+    function getMultiSelect(name, arr, idCol = 0, valueCol = 1) {
+        console.log("getMultiSeelect()");
+        console.log(arr);
+        let rows = ``;
+        arr.forEach(r => {
+            rows = `${rows}
+            <li>${r[valueCol]}<span class="close" onclick="close_${name}(${r[idCol]},this)">x</span></li>`
+        })
+        return `<ul id=${name}>${rows}</up
+            l>`;
+
+    }
+
+    //Main entry point
+    console.log("js_index onLoad")
+    window.addEventListener('load', initialize);
+    window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+        console.log("unahndled error:", errorMsg);
+        console.log(url);
+        console.log(lineNumber);
+        showMessage(`ERROR: ${errorMsg} ${lineNumber} ${url}`);
+        return false;
+    }
+
+</script>

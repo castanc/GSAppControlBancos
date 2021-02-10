@@ -1,0 +1,192 @@
+<script>
+var exports = exports || {};
+var module = module || { exports: exports };
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.KeyValuePair = void 0;
+
+class KeyValuePair {
+    constructor(key, value) {
+        this.key = key;
+        this.value = value;
+    }
+}
+exports.KeyValuePair = KeyValuePair;
+
+exports.SelectableItem = void 0;
+class SelectableItem {
+    constructor(key, value, icon) {
+        this.key = key;
+        this.value = value;
+        this.selected = false;
+        this.icon = icon
+    }
+}
+exports.SelectableItem = SelectableItem;
+
+exports.KVPCollection = void 0;
+class KVPCollection {
+    constructor() {
+        this.arr = new Array();
+    }
+    add(key, value) {
+        this.arr.push(new KeyValuePair(key, value));
+    }
+    update(key, value) {
+        let existing = this.arr.filter(x => x.key == key);
+        if (existing.length > 0)
+        {
+            existing[0].value = value;
+        }
+        else
+        {
+            this.arr.push(new KeyValuePair(key, value));
+            console.log(`Adding Data: ${key}`);
+
+        }
+    }
+    get(key) {
+        let existing = this.arr.filter(x => x.key == key);
+        if (existing.length > 0)
+            return existing[0].value;
+        else
+            return "";
+    }
+    getNumber(key) {
+        try {
+            let existing = this.arr.filter(x => x.key == key);
+            if (existing.length > 0)
+                return Number(existing[0].value);
+            else
+                return 0;
+        }
+        catch (ex) {
+            return 0;
+        }
+    }
+}    
+exports.KVPCollection = KVPCollection;
+
+exports.RecordItem = void 0;
+class RecordItem {
+    constructor() {
+        this.id = 0;
+        this.itemId = 0;
+        this.cant = 0;
+        this.unit = "";
+        this.descr = "";
+        this.url = "";
+    }
+}
+
+exports.RecordItemBase = void 0;
+class RecordItemBase {
+    constructor() {
+        this.id = 0;
+        this.itemId = 0;
+        this.cant = 0;
+    }
+}
+exports.RecordItemBase = RecordItemBase;
+
+
+exports.LogMessage = void 0;
+class LogMessage {
+    constructor() {
+        this.title = "";
+        this.text = "";
+        this.obj = null;
+    }
+}
+exports.LogMessage = LogMessage;
+LogMessage.method = "";
+
+exports.DateHelper = void 0;
+class DateHelper {
+    constructor() {
+        this.dt = null;
+        this.dateYMD = "";
+        this.dateDMY = "";
+        this.dateMDY = "";
+        this.hour = "";
+        this.days = 0;
+        this.minutes = 0;
+        this.startDate = new Date(1900, 0, 1);
+        this.D = 0;
+        this.M = 1;
+        this.Y = 1900;
+        this.H = 0;
+        this.Mi = 0;
+        this.S = 0;
+    }
+    getFromYMDHMS(dateString, dateSep = "-", partsSeparator = " ", hourSeparator = ":") {
+        let y = 1900;
+        let p = dateString.split(partsSeparator);
+        if (p.length > 1) {
+            let q = p[1].split(hourSeparator);
+            if (q.length > 2)
+                this.S = Number(q[2]);
+            if (q.length > 1) {
+                this.H = Number(q[0]);
+                this.Mi = Number(q[1]);
+            }
+        }
+        if (p.length > 0) {
+            let q = p[0].split(dateSep);
+            if (q.length > 2)
+                this.D = Number(q[2]);
+            if (q.length > 1)
+                this.M = Number(q[1]);
+            if (q.length > 0)
+                this.Y = Number(q[0]);
+        }
+        this.dt = new Date(this.Y, this.M - 1, this.D, this.D, this.Mi, this.S);
+        this.dateYMD = `${this.Y}-${this.padLeft(this.M)}-${this.padLeft(this.D)}`;
+        this.dateDMY = `${this.padLeft(this.D)}-${this.padLeft(this.M)}-${this.Y}`;
+        this.hour = `${this.padLeft(this.H)}:${this.padLeft(this.Mi)}:${this.padLeft(this.S)}`;
+        this.days = this.dt.getTime() - this.startDate.getTime();
+        this.days = this.days / (1000 * 60 * 60 * 24);
+        this.minutes = this.H * 60 + this.Mi;
+        return this;
+    }
+    getFromDMYHMS(dateString, dateSep = "-", partsSeparator = " ", hourSeparator = ":") {
+        let y = 1900;
+        let p = dateString.split(partsSeparator);
+        if (p.length > 1) {
+            let q = p[1].split(hourSeparator);
+            if (q.length > 2)
+                this.S = Number(q[2]);
+            if (q.length > 1) {
+                this.H = Number(q[0]);
+                this.Mi = Number(q[1]);
+            }
+        }
+        if (p.length > 0) {
+            let q = p[0].split(dateSep);
+            if (q.length > 2)
+                this.Y = Number(q[2]);
+            if (q.length > 1)
+                this.M = Number(q[1]);
+            if (q.length > 0)
+                this.D = Number(q[0]);
+        }
+        this.dt = new Date(this.Y, this.M - 1, this.D, this.D, this.Mi, this.S);
+        this.dateYMD = `${this.Y}-${this.padLeft(this.M)}-${this.padLeft(this.D)}`;
+        this.dateDMY = `${this.padLeft(this.D)}-${this.padLeft(this.M)}-${this.Y}`;
+        this.hour = `${this.padLeft(this.H)}:${this.padLeft(this.Mi)}:${this.padLeft(this.S)}`;
+        this.days = this.dt.getTime() - this.startDate.getTime();
+        this.days = this.days / (1000 * 60 * 60 * 24);
+        this.minutes = this.H * 60 + this.Mi;
+        return this;
+    }
+    padLeft(value, maxValue = 2, padChars = "0") {
+        if (value < maxValue)
+            return `${padChars}${value.toString()}`;
+        return value.toString();
+    }
+}
+
+exports.DateHelper = DateHelper;
+
+
+
+</script>

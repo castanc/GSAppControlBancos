@@ -1,0 +1,6 @@
+CESAR CASTANO								
+# 59320932								
+LAGY322S00919								
+Time	Record Type	Meal Insulin (units)	Long Acting Insulin (units)	Glucose (mg/dL)	Ketone (mmol/L)	Adjustment Insulin (units)	User Change Insulin (units)	
+09/01/2020 15:48	2			127				
+10/01/2020 12:34	2			144				
