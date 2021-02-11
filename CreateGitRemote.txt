@@ -3,5 +3,6 @@ git init
 git add README.md
 git commit -m "first commit"
 git branch -M master
-git remote add origin https://github.com/castanc/GSAppControlBancos" .git
+rem create this repository in github
+git remote add origin https://github.com/castanc/GSAppControlBancos.git
 git push -u origin master

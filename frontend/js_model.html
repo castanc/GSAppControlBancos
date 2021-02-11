@@ -107,9 +107,11 @@ class DateHelper {
         this.dateYMD = "";
         this.dateDMY = "";
         this.dateMDY = "";
+        this.DOW = 0;
         this.hour = "";
         this.days = 0;
         this.minutes = 0;
+        this.fullMinutes = 0;
         this.startDate = new Date(1900, 0, 1);
         this.D = 0;
         this.M = 1;
@@ -117,6 +119,24 @@ class DateHelper {
         this.H = 0;
         this.Mi = 0;
         this.S = 0;
+    }
+    getFromDateObject(dtObj) {
+        this.dt = dtObj;
+        this.Y = this.dt.getFullYear();
+        this.M = this.dt.getMonth() + 1;
+        this.D = this.dt.getDate();
+        this.H = this.dt.getHours();
+        this.Mi = this.dt.getMinutes();
+        this.S = this.dt.getSeconds();
+        this.dateYMD = `${this.Y}-${this.padLeft(this.M)}-${this.padLeft(this.D)}`;
+        this.dateDMY = `${this.padLeft(this.D)}-${this.padLeft(this.M)}-${this.Y}`;
+        this.hour = `${this.padLeft(this.H)}:${this.padLeft(this.Mi)}:${this.padLeft(this.S)}`;
+        this.days = this.dt.getTime() - this.startDate.getTime();
+        this.days = this.days / (1000 * 60 * 60 * 24);
+        this.minutes = this.H * 60 + this.Mi;
+        this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days * 24 * 60 + this.minutes;
+        return this;
     }
     getFromYMDHMS(dateString, dateSep = "-", partsSeparator = " ", hourSeparator = ":") {
         let y = 1900;
@@ -146,6 +166,8 @@ class DateHelper {
         this.days = this.dt.getTime() - this.startDate.getTime();
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H * 60 + this.Mi;
+        this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days * 24 * 60 + this.minutes;
         return this;
     }
     getFromDMYHMS(dateString, dateSep = "-", partsSeparator = " ", hourSeparator = ":") {
@@ -176,9 +198,11 @@ class DateHelper {
         this.days = this.dt.getTime() - this.startDate.getTime();
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H * 60 + this.Mi;
+        this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days * 24 * 60 + this.minutes;
         return this;
     }
-    padLeft(value, maxValue = 2, padChars = "0") {
+    padLeft(value, maxValue = 10, padChars = "0") {
         if (value < maxValue)
             return `${padChars}${value.toString()}`;
         return value.toString();
@@ -190,3 +214,5 @@ exports.DateHelper = DateHelper;
 
 
 </script>
+
+

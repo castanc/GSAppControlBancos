@@ -269,17 +269,15 @@
 
     function sortFunction(a, b) {
 
-        let date1 = buildDate(a[10], a[11]);
-        let date2 = buildDate(b[10], b[11]);
 
-        if (date1 === date2) {
+        if (a[5] === b[5]) {
             return 0;
         }
         else {
             if (sortDescending)
-                return (date1 > date2) ? -1 : 1;
+                return (a[5] > b[5]) ? -1 : 1;
             else
-                return (date1 < date2) ? -1 : 1;
+                return (a[5] < b[5]) ? -1 : 1;
         }
     }
 
@@ -725,132 +723,7 @@
     }
 
 
-    function renderMaster() {
-        let recType = "";
-        let classText = "";
-        let icon = "";
-        let iconColor = "";
-        let styleTag = "";
-        let fontSize = "font-size:22px;";
-        let color = "color:white;";
-        let style = `style="${fontSize} ${color}"`;
-
-        if (master == null) {
-            //show error
-            return;
-        }
-        if (master.lenght < 1)
-            return;
-
-        showDiv("content");
-        hideDiv("DIVrecType");
-        hideDiv("SELECT_RT");
-
-        let row = `<div style="font-size:32px;">
-            <hr>
-            <div class="row">
-            <div class="col-md-1"></div>
-            <div class="col-md-1">Dia</div>
-            <div class="col-md-2">Fecha</div>
-            <div class="col-md-2">Hora</div>
-            <div class="col-md-6">Data</div>
-            </div>
-            `;
-
-        if (master.length > 0) {
-
-            let master2;
-            if (filterRT != "") {
-                master2 = master.filter(x => x[9] = filterRT);
-                master2 = sortArray(master2, 3);
-            }
-            else {
-                master2 = sortArray(master, 3);
-            }
-
-            GlucLevels.forEach(item => {
-                item.count = 0;
-                item.acumulado = 0;
-            })
-
-            let divRecords = "";
-            countGluc = 0;
-            for (var i = 0; i < master2.length; i++) {
-                if (master2[i].length < 9)
-                    continue;
-
-                recType = master2[i][9].trim();
-
-                if (recType == "GLUC") {
-                    if (master2[i][4] < minutes1 ||
-                        master2[i][4] > minutes2 ||
-                        master2[i][12] < glucMin ||
-                        master2[i][12] > glucMax)
-                        continue;
-                }
-
-                let rti = RecTypes.filter(x => x.name == recType);
-                icon = "";
-                iconColor = "";
-                styleTag = "";
-
-                if (rti.length > 0) {
-                    icon = rti[0].icon;
-                    iconColor = `color:${rti[0].textColor};`;
-                    styleTag = `style="${iconColor}"`;
-                }
-
-                if (icon == "")
-                    continue;
-
-                let iconTag = `<span style="font-size: 40px; ${iconColor}">
-                                    <i class="${icon}"></i>
-                                </span>`;
-                divRecords = buildRecords(recType, master2[i][1], master2[i][12]);
-
-                let value = master2[i][12];
-                if (recType == "GLUC") {
-                    countGluc++;
-                    let gl = GlucLevels.filter(x => value >= x.min && value < x.max);
-                    if (gl.length > 0) {
-                        styleTag = `style="background-color:${gl[0].backgroundColor};"`;
-                        gl[0].count++;
-                    }
-                }
-
-                row = `${row}
-                    <div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
-                        <div class="col-md-1">
-                            ${iconTag}
-                        </div>
-
-                        <div class="col-md-1" ${styleTag}>
-                            ${days[master2[i][8] + 1]} 
-                        </div>
-                        <div class="col-md-2" ${styleTag}>
-                        ${months[master2[i][6]]}-${master2[i][7]}
-                        </div>
-                        <div class="col-md-2" ${styleTag} >
-                        ${master2[i][11]}
-                        </div>
-                        <div id="data${master2[i][1]}" class="col-md-6" ${styleTag}>
-                            ${divRecords}
-                        </div>
-                    </div>
-                    <div id="detail${master2[i][1]}" class="row">
-                    </div>`;
-            }
-        }
-        row = `${row}</div>`;
-        countGluc--;
-        let glucTotalsHtml = getGlucTotals();
-        writeInnerHtml("btnReport", "Reporte");
-        writeInnerHtml("title", glucTotalsHtml);
-        writeInnerHtml("report", row);
-        setFilterData();
-    }
-
-
+    
 
 
     function renderDrugItems(div = "rows") {
@@ -1033,11 +906,11 @@
             }
 
             msg = "";
-            for (var i = 0; i < response.messages.lenght; i++) {
+            for (var i = 0; i < response.messages.length; i++) {
                 msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
             }
             //writeInnerHtml("result", msg);
-            if (msg == "" && response.messages.lenght > 0) {
+            if (msg == "" && response.messages.length > 0) {
                 msg = response.messages[0];
             }
             showMessage(msg);
@@ -1151,7 +1024,7 @@
             }
 
             let msg = "";
-            for (var i = 0; i < response.messages.lenght; i++) {
+            for (var i = 0; i < response.messages.length; i++) {
                 msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
             }
             writeInnerHtml("result", msg);
@@ -1185,7 +1058,7 @@
             }
 
             let msg = "";
-            for (var i = 0; i < response.messages.lenght; i++) {
+            for (var i = 0; i < response.messages.length; i++) {
                 msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
             }
             writeInnerHtml("result", msg);
@@ -1226,16 +1099,25 @@
 
     function setReportDates() {
 
-        requiredFields = "FECHA_DESDE,FECHA_HASTA,HORA_DESE,HORA_HASTA,GLUC_DESDE,GLUC_HAST,REC_FILTER,DAY_FILTER";
+        requiredFields = "FECHA_DESDE,FECHA_HASTA,HORA_DESE,HORA_HASTA,REC_FILTER,DAY_FILTER";
         initializeData(requiredFields);
+        Data.update("REC_TYPE","REP");
         hideDiv("submitArea");
 
         dt = new Date();
+        let dth = new DateHelper();
+        dth = dth.getFromDateObject(dt);
+        console.log("dth",dth);
+
         let fecha = getDateYMD(dt);
+        fecha = dth.dateYMD;
         setValueAndData("FECHA_HASTA", fecha);
 
         let dt1 = new Date(dt.getFullYear(), 0, 1);
-        fecha = getDateYMD(dt1);
+        let dth2 = new DateHelper();
+        dth2 = dth2.getFromDateObject(dt1);
+        console.log("dth2",dth2);
+        fecha = dth2.dateYMD;   //getDateYMD(dt1);
         setValueAndData("FECHA_DESDE", fecha);
 
         minutes1 = 0;
@@ -1251,9 +1133,6 @@
 
         setValueAndData("HORA_DESDE", horaDesde);
         setValueAndData("HORA_HASTA", horaHasta);
-        setValueAndData("GLUC_DESDE", glucMin.toString());
-        setValueAndData("GLUC_HASTA", glucMax.toString());
-
     }
 
     function clearLocalStorage() {
@@ -1267,6 +1146,7 @@
 
     }
     async function logServer(msg, data) {
+        console.log("logServer()",msg,data);
         google.script.run.withFailureHandler(failureHandler)
             .withSuccessHandler(processLogResponse)
             .log(msg, data);
@@ -1275,24 +1155,24 @@
     function generalReport() {
         console.log("generalReport()");
         editMode = true;
-        action = "Report";
+        action = "Reporte";
         showDiv("spinner");
         hideDiv("adminMenu");
-        hideDiv("DIVfechaHora");
-        hideDiv("DIVrecType");
         hideDiv("submitArea");
         hideDiv("rows");
         recType = "REP";
         writeInnerHtml("title", "Reporte por Rango de Fechas");
 
+        html = "";
         html = localStorage.getItem("content_REP");
+        logServer("reprot htmlf rom local storage:",`[${html}]`);
+
         if (html == null || html == undefined)
             html = "";
 
 
         //todo: if entry is not found is returning as if it exists
-        if (html.lenght == 0 || overrideLocalStorage) {
-            logServer("getting report html from", "server");
+        if (html.length == 0 || overrideLocalStorage) {
             overrideLocalStorage = false;
             google.script.run.withFailureHandler(failureHandler)
                 .withSuccessHandler(processResponseLoadReportForm)
@@ -1302,6 +1182,7 @@
             writeInnerHtml("content", html);
             setReportDates();
             setFilterData();
+            hideDiv("mainContent");
             showDiv("reportArea");
 
         }
@@ -1324,7 +1205,7 @@
 
         Data.update("FECHA_HASTA", getDateYMD(dtHasta));
 
-        action = "Report";
+        action = "Reporte";
         console.log("reportYear", Data);
 
         subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
@@ -1393,7 +1274,7 @@
             }
 
             let msg = "";
-            for (var i = 0; i < response.messages.lenght; i++) {
+            for (var i = 0; i < response.messages.length; i++) {
                 msg = `${msg}<p class="text-info>${response.messages[i]}</p></br>`;
             }
             writeInnerHtml("result", msg);
@@ -1415,8 +1296,10 @@
     }
 
 
+    
     function processResponseLoadReportForm(json) {
         processResponse(json);
+        hideDiv("mainContent");
         setReportDates();
         setFilterData();
         showDiv("reportArea");
@@ -1450,7 +1333,8 @@
 
     function newRecord() {
         console.log("newRecord");
-        clearDiv("REPORT");
+        showDiv("mainContent");
+        clearDiv("report");
         hideDiv("reportMenu");
         hideDiv("adminMenu");
         hideDiv("reportArea");

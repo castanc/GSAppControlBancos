@@ -14,6 +14,7 @@ export class GSResponse {
     master: [[]];
     detail: [[]];
     messages = new Array<string>();
+    refreshCache = false;
     showModal = false;
     fpi: FileProcessItem;
     

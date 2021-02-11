@@ -8,6 +8,7 @@ export class DateHelper
     hour = "";
     days = 0;
     minutes = 0;
+    fullMinutes = 0;
     startDate = new Date(1900,0,1);
     D =0;
     M =1;
@@ -15,7 +16,6 @@ export class DateHelper
     H =0;
     Mi =0;
     S=0;
-
 
 
 
@@ -36,6 +36,7 @@ export class DateHelper
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H*60 + this.Mi;
         this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days*24*60 + this.minutes;
         return this;
     }
 
@@ -73,6 +74,7 @@ export class DateHelper
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H*60 + this.Mi;
         this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days*24*60 + this.minutes;
         return this;
     }
 
@@ -108,10 +110,11 @@ export class DateHelper
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H*60 + this.Mi;
         this.DOW = this.dt.getDay();
+        this.fullMinutes = this.days*24*60 + this.minutes;
         return this;
    }
 
-    padLeft(value, maxValue = 2, padChars = "0") {
+    padLeft(value, maxValue = 10, padChars = "0") {
         if (value < maxValue)
             return `${padChars}${value.toString()}`;
         return value.toString();

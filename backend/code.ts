@@ -119,6 +119,7 @@ function getExeItems() {
 }
 
 
+
 function getRecTypes() {
     let sv = new Service();
     let html = sv.getHtmlSelectFiltered("Items", "RT", "Select Record Type", "", true);
@@ -161,17 +162,18 @@ function getFileInfo(url)
     return JSON.stringify(response);    
 }
 
-function ImportBROU(data) {
+function report(Data){
     let response = new GSResponse();
     try {
         let sv = new Service();
-        sv.importBROU(data);
+        response = sv.report(Data);
     }
     catch (ex) {
-        handleException(ex, response, "importBROU");
+        handleException(ex, response, "getFileInfo");
     }
-    return JSON.stringify(response);
+    return JSON.stringify(response);        
 }
+
 
 function processForm(Data, records, colSep = "\t", lineSep = "\n") {
 

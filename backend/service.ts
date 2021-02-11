@@ -20,6 +20,8 @@ export class Service {
     message = "";
     ex;
     conceptos = [[]];
+    dtDesde: DateHelper;
+    dtHasta: DateHelper;
 
 
     constructor() {
@@ -172,10 +174,6 @@ export class Service {
             formUrl = "";
 
         SysLog.log(0, "formId", "service.ts getForm()", formId);
-        if (formId != "BROU")
-            formId = "GASTOS";
-
-        SysLog.log(0, "formId", "service.ts getForm()", formId);
         if (html == null || html.length == 0) {
             html = HtmlService.createTemplateFromFile(`frontend/${formId}`).evaluate().getContent();
             //todo: create doc with html
@@ -302,7 +300,7 @@ export class Service {
         gridSource = rangeData.getValues();
 
         let data2 = new KVPCollection();
-        data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA");
+        data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,FULL_MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA");
         indexComprobante = data2.getIndex("COMPROBANTE");
 
         fileName = G.FileName;
@@ -347,8 +345,10 @@ export class Service {
                 data2.update("ROW", lastRow.toString());
                 data2.update("DAYS", dht.days.toString());
                 data2.update("MINUTES", dht.minutes.toString());
+                data2.update("FULL_MINUTES", dht.fullMinutes.toString());
                 data2.update("FECHA", dht.dateYMD);
                 data2.update("HORA", dht.hour);
+                data2.update("REC_TYPE", recType);
 
                 data2.update("CONCEPTO", c[1]);
                 if ( c[3].length == 0 )
@@ -459,66 +459,7 @@ export class Service {
 
 
 
-    importBROU(data: string) {
-        SysLog.log(0,"importBROU",data);
-        if (data.toLowerCase().indexOf("http://") >= 0)
-            return this.importBatchBROU(data);
-
-        data = Utils.replace(data, "\t\t", "\t").trim();
-        let dth = new DateHelper();
-        let duplicates = 0;
-        let fpi = new FileProcessItem();
-
-        let data2 = new KVPCollection();
-        data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,VALOR,COMPROMISO,FECHA_RESOLUCION,RESULTADO");
-
-        let conceptos = ",TRF E-BROU JUB.Y PENS.,HONORARIOS PROFESIONALES,ALQUILERES,INGRESOS POR SERVICIO PERSONALES,PRESTACIONES SOCIALES,ALQUILERES,PAGO A PROVEEDORES";
-        let ss = Utils.getCreateSpreadSheet(this.folder, G.FileName, "Master,Detail", data2.getColNames());
-
-        let sheet = ss.getActiveSheet();
-        var rangeData = sheet.getDataRange();
-        var lastColumn = rangeData.getLastColumn();
-        var lastRow = rangeData.getLastRow();
-        let grid = rangeData.getValues();
-
-
-
-        let lines = data.split("\n");
-        lines.forEach(l => {
-            let c = l.split("\t");
-            if (c.length > 1 && conceptos.indexOf(c[1].toUpperCase()) > 0) {
-                if (c.length > 3) {
-                    dth = dth.getFromDMYHMS(c[0], "/", " ");
-                    data2.update("FECHA", dth.dateYMD);
-                    data2.update("HORA", dth.hour);
-                    data2.update("CONCEPTO", c[1]);
-                    data2.update("COMPROBANTE", c[3]);
-                    data2.update("VALOR", c[5]);
-                    data2.update("MINUTES", dth.minutes);
-                    data2.update("DAYS", dth.days);
-                    data2.update("Y", dth.Y);
-                    data2.update("M", dth.M);
-                    data2.update("D", dth.D);
-                    data2.update("REC_TYPE", "BROU");
-                    data2.update("ROW", lastRow);
-
-                    let eRow = grid.filter(x => x[13] == c[3]);
-                    if (eRow.length == 0) {
-                        lastRow++;
-                        let row = data2.getColValues().split(",");
-                        ss.appendRow(row);
-                        grid.push(row);
-                    }
-                    else
-                        duplicates++;
-
-                }
-            }
-
-        });
-        fpi.duplicates = duplicates;
-        return fpi;
-    }
+  
 
     processForm(Data: KVPCollection, records: Array<RecordItemBase>, colSep = "\t", lineSep = "\n"): GSResponse {
         this.getLogLevel("Parameters");
@@ -539,6 +480,12 @@ export class Service {
             response.fpi= this.importBatchBROU(data2.get("EXTRACTO_BROU");
             return response;
         }
+        else if ( recType == "REP")
+        {
+            response = this.report(Data);
+            return response;
+        }
+            
 
 
         let id = this.getId("Id");
@@ -612,6 +559,31 @@ export class Service {
         response.id = id;
         return response;
     }
+
+    report(data: KVPCollection): GSResponse {
+        let response = new GSResponse();
+        let Data = new KVPCollection();
+        let fileName = "BROUCesar";
+        Data.arr = data.arr;
+
+        this.dtDesde = new DateHelper();
+        this.dtDesde = this.dtDesde.getFromDMYHMS("FECHA_DESDE");
+
+        this.dtHasta = new DateHelper();
+        this.dtHasta = this.dtHasta.getFromDMYHMS("FECHA_HASTA");
+
+        let master;
+        let detail;
+
+        let ss = Utils.openSpreadSheet(fileName,this.folder);
+        master = Utils.getData(ss,"Master").filter(x => x[3]>= this.dtDesde.days && x[4]<=this.dtHasta.days);
+        response.detail = [[]];
+
+        response.master = master;
+        return response;
+
+    }
+
 
 
 

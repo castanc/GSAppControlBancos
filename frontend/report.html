@@ -4,11 +4,11 @@
             Fechas
         </div>
         <div class="col-md-5">
-            <input type="date" class="col-md-5 form-control title-font" id="FECHA_DESDE" name="FECHA_DESDE"
+            <input type="date" class="col-md-5 form-control big-font" id="FECHA_DESDE" name="FECHA_DESDE"
                 oninput="onInputField(this.id,this.value)">
         </div>
         <div class="col-md-5">
-            <input type="date" class="col-md-5 form-control title-font" id="FECHA_HASTA" name="FECHA_HASTA"
+            <input type="date" class="col-md-5 form-control big-font" id="FECHA_HASTA" name="FECHA_HASTA"
                 oninput="onInputField(this.id,this.value)">
         </div>
     </div>
@@ -18,35 +18,48 @@
             Hora
         </div>
         <div class="col-md-5">
-            <input type="time" class="col-md-5 form-control title-font" id="HORA_DESDE" name="HORA_DESDE"
+            <input type="time" class="col-md-5 form-control big-font" id="HORA_DESDE" name="HORA_DESDE"
             oninput="onInputField(this.id,this.value)">
         </div>
         <div class="col-md-5">
-            <input type="time" class="col-md-5 form-control title-font" id="HORA_HASTA" name="HORA_HASTA"\
+            <input type="time" class="col-md-5 form-control big-font" id="HORA_HASTA" name="HORA_HASTA"\
             oninput="onInputField(this.id,this.value)">
         </div>
     </div>
     
-    
+
     <div class="row">
         <div class="col-md-2">
-            Glucosa
+            Valor
         </div>
         <div class="col-md-5">
-            <input type="number" class="col-md form-control title-font" id="GLUC_DESDE" name="GLUC_DESDE"
-                oninput="onInputField(this.id,this.value)" class="title-font">
+            <input type="number" class="col-md-5 form-control big-font" id="VALOR_DESDE" name="VALOR_DESDE"
+            oninput="onInputField(this.id,this.value)">
         </div>
         <div class="col-md-5">
-            <input type="number" class="col-md form-control title-font" id="GLUC_HASTA" name="GLUC_HASTA"
-                oninput="onInputField(this.id,this.value)" class="title-font">
+            <input type="number" class="col-md-5 form-control big-font" id="VALOR_HASTA" name="VALOR_HASTA"\
+            oninput="onInputField(this.id,this.value)">
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="col-md-2">
+            Tipo Registro
+        </div>
+        <div id="tipoRegistro" class="col-md-10 big-font">
         </div>
     </div>
 
     <div class="row">
         <div class="col-md-2">
-            Registro
+           Concepto
         </div>
-        <div id="tipoRegistro" class="col-md-10 title-font">
+        <div id="concepto" class="col-md-10 big-font">
+            <input type="text" class="col-md-5 form-control big-font" id="CONCEPTO" name="CONCEPTO"\
+            oninput="onInputField(this.id,this.value)">
+
         </div>
     </div>
     
@@ -54,7 +67,7 @@
         <div class="col-md-2">
             Dia
         </div>
-        <div id="diaSemana" class="col-md-10 title-font">
+        <div id="diaSemana" class="col-md-10 big-font">
         </div>
     </div>
     
