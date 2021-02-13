@@ -78,8 +78,7 @@ export class Service {
 
         let id = 0;
         let data = Utils.getData(this.db, tabName).filter(x => x[3] == "LOGLEVEL");
-        if ( data.length > 0 )
-        {
+        if (data.length > 0) {
             SysLog.level = data[0][4];
         }
         return SysLog.level;
@@ -250,7 +249,7 @@ export class Service {
             let fi = new FileInfo();
             fi.setFileInfo(ssFile);
             response.addHtml("rows", this.getFileInfoHTML(fi));
-            
+
         }
         else
             response.addHtml("rows", this.getFileInfoHTML(null));
@@ -258,7 +257,14 @@ export class Service {
         return response;
     }
 
-    importBatchBROU(url): FileProcessItem {
+    getMoneyValue(val)
+    {
+        let text = Utils.replace(val,".","");
+        text = Utils.replace(text,",",".");
+        return text;
+    }
+
+    importBatchBROU(recType, url): FileProcessItem {
 
         let fileName = "";
         let lastRow = 2;
@@ -268,7 +274,6 @@ export class Service {
         let lastColumn = 0;
         let grid;
         let value;
-        let recType = "";
         let v;
         let i = 0;
         let ssSource;
@@ -280,9 +285,11 @@ export class Service {
         let dht = new DateHelper();
         let indexComprobante = 0;
         let valor = "";
+        let oldFormatDate = new Date(2019, 12, 31);
 
 
-        this.conceptos = Utils.getData(this.db, "Items").filter(x => x[2] == "CO");
+
+        this.conceptos = Utils.getData(this.db, "Items").filter(x => x[2] == recType);
         SysLog.log(0, "conceptos", JSON.stringify(this.conceptos));
         ssSource = Utils.openSpreadSheet(url);
         if (ssSource == null)
@@ -294,10 +301,18 @@ export class Service {
         fpi.setFileInfo(fi);
 
         sheet = ssSource.getActiveSheet();
+        //set format as string
+        var column = sheet.getRange("A1:A");
+        column.setNumberFormat("@");
+
+        var column = sheet.getRange("C1:C");
+        column.setNumberFormat("@");
+
         var rangeData = sheet.getDataRange();
         lastColumn = rangeData.getLastColumn();
         fpi.totalRows = rangeData.getLastRow();
         gridSource = rangeData.getValues();
+
 
         let data2 = new KVPCollection();
         data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,FULL_MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA");
@@ -306,6 +321,8 @@ export class Service {
         fileName = G.FileName;
         ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
         sheet = ss.getActiveSheet();
+
+
         range = sheet.getDataRange();
         lastColumn = range.getLastColumn();
         lastRow = range.getLastRow() + 1;
@@ -314,29 +331,37 @@ export class Service {
 
         let id = this.getId("Parameters");
 
-        SysLog.log(0, "grid", "importLegacy()", `grid length: ${gridSource.length} lastColumn:${lastColumn}`);
+        SysLog.log(0, "grid", "importBatchBROU()", `grid length: ${gridSource.length} lastColumn:${lastColumn}`);
         for (i = 1; i < gridSource.length; i++) {
             try {
                 c = gridSource[i];
+                SysLog.log(0, `** PROCESSING ** ${i} invalid date:${dht.invalidDate}`, JSON.stringify(c));
 
                 //if (!this.validateConcepto(c[1]))
                 //    continue;
 
-                dt = c[0];
-                if (!Utils.isDate(dt))
+                dht = dht.getFromDMYHMS(c[0], "/");
+
+
+                //todo: this doesnt work
+                
+                if (dht.dt == null || dht.invalidDate)
                     continue;
 
-                if (c[2].trim() != "") {
-                    let eRow = grid.filter(x => x[indexComprobante] == `"${c[3]}"`)
-                    if (eRow.length > 0) {
-                        fpi.duplicates++;
-                        continue;
+                dt = dht.dt;
+                if (dt >= oldFormatDate) {
+                    if (c[2].trim() != "") {
+                        let eRow = grid.filter(x => x[indexComprobante] == `"${c[3]}"`)
+                        if (eRow.length > 0) {
+                            fpi.duplicates++;
+                            continue;
+                        }
                     }
                 }
 
 
 
-                dht = dht.getFromDateObject(dt);
+                //dht = dht.getFromDateObject(dt);
                 data2.update("D", dht.D.toString());
                 data2.update("M", dht.M.toString());
                 data2.update("Y", dht.Y.toString());
@@ -350,14 +375,34 @@ export class Service {
                 data2.update("HORA", dht.hour);
                 data2.update("REC_TYPE", recType);
 
-                data2.update("CONCEPTO", c[1]);
-                if ( c[3].length == 0 )
-                    data2.update("COMPROBANTE", "");
-                else 
-                    data2.update("COMPROBANTE", `"${c[3]}"`);
+                //todo: conceptos normalize to conceptos items, if new create it
+                if (dt < oldFormatDate) {
+                    let conc = this.conceptos.filter(x => x[3] == c[1]);
 
-                data2.update("DEBITO", c[5]);
-                data2.update("CREDITO", c[6]);
+                    data2.update("CONCEPTO", c[1]);
+                    data2.update("COMPROBANTE", c[3]);
+                    if (conc.length > 0) {
+                        if (conc[0][3] == "D")
+                            data2.update("DEBITO", this.getMoneyValue(c[2].toString()));
+                        else
+                            data2.update("CREDITO", this.getMoneyValue(c[2].toStrig()));
+                    }
+                    else {
+                        data2.update("DEBITO", this.getMoneyValue(c[2].toString()));
+                        data2.update("CREDITO", "");
+                    }
+                }
+                else {
+
+                    data2.update("CONCEPTO", c[1]);
+                    if (c[3].length == 0)
+                        data2.update("COMPROBANTE", "");
+                    else
+                        data2.update("COMPROBANTE", `"${c[3]}"`);
+
+                    data2.update("DEBITO", c[5]);
+                    data2.update("CREDITO", c[6]);
+                }
 
                 let r = new RecordItemBase();
                 r.id = id;
@@ -375,8 +420,9 @@ export class Service {
                 fpi.failRows++;
                 fpi.failRow = i;
                 fpi.error = ex.message;
+                SysLog.logException(ex,"importBatchBROU()",JSON.stringify(c));
                 //break;
-                //throw ex;
+                throw ex;
             }
 
         }
@@ -459,7 +505,7 @@ export class Service {
 
 
 
-  
+
 
     processForm(Data: KVPCollection, records: Array<RecordItemBase>, colSep = "\t", lineSep = "\n"): GSResponse {
         this.getLogLevel("Parameters");
@@ -475,17 +521,16 @@ export class Service {
         let fpi = new FileProcessItem();
         let url = "";
 
-        
+
         if (recType == "BROU") {
-            response.fpi= this.importBatchBROU(data2.get("EXTRACTO_BROU");
+            response.fpi = this.importBatchBROU(recType, data2.get("EXTRACTO_BROU"));
             return response;
         }
-        else if ( recType == "REP")
-        {
+        else if (recType == "REP") {
             response = this.report(Data);
             return response;
         }
-            
+
 
 
         let id = this.getId("Id");
@@ -566,20 +611,29 @@ export class Service {
         let fileName = "BROUCesar";
         Data.arr = data.arr;
 
+        SysLog.log(0, "data received", "service.ts report()", JSON.stringify(Data));
+
         this.dtDesde = new DateHelper();
-        this.dtDesde = this.dtDesde.getFromDMYHMS("FECHA_DESDE");
+        this.dtDesde = this.dtDesde.getFromYMDHMS(Data.get("FECHA_DESDE"));
 
         this.dtHasta = new DateHelper();
-        this.dtHasta = this.dtHasta.getFromDMYHMS("FECHA_HASTA");
+        this.dtHasta = this.dtHasta.getFromYMDHMS(Data.get("FECHA_HASTA"));
+
+        SysLog.log(0, "FECHA DESDE", JSON.stringify(this.dtDesde));
+        SysLog.log(0, "FECHA HASTA", JSON.stringify(this.dtHasta));
 
         let master;
         let detail;
 
-        let ss = Utils.openSpreadSheet(fileName,this.folder);
-        master = Utils.getData(ss,"Master").filter(x => x[3]>= this.dtDesde.days && x[4]<=this.dtHasta.days);
+        let ss = Utils.openSpreadSheet(fileName, this.folder);
+        master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
         response.detail = [[]];
 
         response.master = master;
+
+        let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
+        response.addHtml("filtros", filtrosHtml);
+        SysLog.log(0, "response", "report", JSON.stringify(response));
         return response;
 
     }

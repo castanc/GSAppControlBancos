@@ -8,17 +8,11 @@ import { Utils } from "./Utils";
 function testImportBatchBROUO()
 {
     let sv = new Service();
-    let result = sv.importBatchBROU("https://docs.google.com/spreadsheets/d/1YAUE6bVZlbQb5W7zC3TUh6IVlaB0u3VsLoqDTNxFgho/edit#gid=0");
+    let result = sv.importBatchBROU("BROU","https://docs.google.com/spreadsheets/d/1e85oSbt4QZCfZXAfNc9YAvcmt1BF0-OSQZkyRxnDsCU/edit?usp=drive_web&ouid=105141006247476017889");
 }
 
 
 
-function testGetFileInfo()
-{
-    let sv = new Service();
-    let result = sv.getFileInfo("https://docs.google.com/spreadsheets/d/1YAUE6bVZlbQb5W7zC3TUh6IVlaB0u3VsLoqDTNxFgho/edit#gid=0");
-
-}
 
 function testDateHelper() {
     let dth = new DateHelper();

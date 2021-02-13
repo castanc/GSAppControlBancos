@@ -1,0 +1,11 @@
+keep in mind:
+
+To initialize date fields in HTML5, must padd months and days padded
+The month in date objectss start at 0 throug 11
+verify not using "lenght" rather than "length"
+
+verify unused variables
+verify misspelled properties
+verify undeclared variables ( misspelled)
+verify calls to undefined methods
+us JSLINT

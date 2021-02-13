@@ -1,46 +1,20 @@
 <div class="row">
     <div class="col-md-2">
-        Hora
     </div>
-    <div class="col-md-5">
-        <input type="time" class="col-md-5 form-control title-font" id="HORA_DESDE" name="HORA_DESDE"
-        oninput="onInputField(this.id,this.value)">
+    <div class="col-md-1">
+        <i class="fas fa-filter fa-2x" onclick="filtrar()"></i>
     </div>
-    <div class="col-md-5">
-        <input type="time" class="col-md-5 form-control title-font" id="HORA_HASTA" name="HORA_HASTA"\
-        oninput="onInputField(this.id,this.value)">
+    <div class="col-md-1"></div>
+    <div class="col-md-1">
+        <i class="fas fa-file-excel fa-2x" onclick="filtrar()"></i>
     </div>
-</div>
-
-
-<div class="row">
-    <div class="col-md-2">
-        Glucosa
+    <div class="col-md-1"></div>
+    <div class="col-md-1">
+        <i class="fas fa-download fa-2x" onclick="filtrar()"></i>
     </div>
-    <div class="col-md-5">
-        <input type="number" class="col-md form-control title-font" id="GLUC_DESDE" name="GLUC_DESDE"
-            oninput="onInputField(this.id,this.value)" class="title-font">
+    <div class="col-md-1"></div>
+    <div class="col-md-1">
+        <i class="fa fa-envelope fa-2x" onclick="filtrar()"></i>
     </div>
-    <div class="col-md-5">
-        <input type="number" class="col-md form-control title-font" id="GLUC_HASTA" name="GLUC_HASTA"
-            oninput="onInputField(this.id,this.value)" class="title-font">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2">
-        Dia
-    </div>
-    <div id="diaSemana" class="col-md-10 title-font">
-    </div>
-</div>
-
-
-<div class="row">
-    <div class="col-md-10"></div>
-    <div class="col-md-2">
-        <button type="button" class="btn btn-primary btn-block big-font"
-        onclick="loadReport()"
-        >Cargar</button>
-    </div>
+    <div class="col-md-1"></div>
 </div>

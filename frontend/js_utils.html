@@ -207,7 +207,7 @@
                 div.style.display = "none";
         }
         else {
-             (`ERROR div not found ${divId}`);
+            (`ERROR div not found ${divId}`);
         }
     }
 
@@ -229,23 +229,41 @@
         for (var i = 0; i < buttons.length; i++) {
             buttons[i].disabled = state;
         };
-
-        function getCurrentText(btn) {
-            let currentText = document.querySelector(`#${btn}`).innerHTML;
-            return currentText;
-        }
-
-        function setCurrentText(btn, text) {
-            document.querySelector(`#${btn}`).innerHTML = text;
-        }
-
-
-        function hideLabel(lbl) {
-            document.querySelector(`#${lbl}`).style.display = "none";
-        }
-
-
     }
+
+    function getCurrentText(btn) {
+        let currentText = document.querySelector(`#${btn}`).innerHTML;
+        return currentText;
+    }
+
+    function setCurrentText(btn, text) {
+        document.querySelector(`#${btn}`).innerHTML = text;
+    }
+
+
+    function hideLabel(lbl) {
+        document.querySelector(`#${lbl}`).style.display = "none";
+    }
+
+    //https://stackoverflow.com/questions/149055/how-to-format-numbers-as-currency-string
+    function formatMoney(number, decPlaces=2, decSep=".", thouSep = ",") {
+        decPlaces = isNaN(decPlaces = Math.abs(decPlaces)) ? 2 : decPlaces,
+            decSep = typeof decSep === "undefined" ? "." : decSep;
+        thouSep = typeof thouSep === "undefined" ? "," : thouSep;
+        var sign = number < 0 ? "-" : "";
+        var i = String(parseInt(number = Math.abs(Number(number) || 0).toFixed(decPlaces)));
+        var j = (j = i.length) > 3 ? j % 3 : 0;
+
+        return sign +
+            (j ? i.substr(0, j) + thouSep : "") +
+            i.substr(j).replace(/(\decSep{3})(?=\decSep)/g, "$1" + thouSep) +
+            (decPlaces ? decSep + Math.abs(number - i).toFixed(decPlaces).slice(2) : "");
+    }
+
+
+
+
+
 
 
 

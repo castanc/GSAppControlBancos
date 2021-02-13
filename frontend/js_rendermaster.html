@@ -4,16 +4,20 @@ function renderMaster() {
     let classText = "";
     let icon = "";
     let iconColor = "";
-    let styleTag = "";
-    let fontSize = "font-size:22px;";
+    let fontSize = "font-size:18px;";
+    let styleTag = `style="${fontSize}"`;
     let color = "color:white;";
     let style = `style="${fontSize} ${color}"`;
+    let dth = new DateHelper();
+    let hora = "";
 
     if (master == null) {
         return;
     }
     if (master.length < 1)
         return;
+
+    dth = dth.getFromDateObject(new Date());
 
     showDiv("content");
     hideDiv("DIVrecType");
@@ -46,52 +50,63 @@ function renderMaster() {
             if (master2[i].length < 9)
                 continue;
 
-            recType = master2[i][9].trim();
+            recType = master2[i][10].trim();
 
-            if (master2[i][4] < minutes1 ||
-                master2[i][4] > minutes2 )
-                continue;
+            // if (master2[i][4] < minutes1 ||
+            //     master2[i][4] > minutes2 )
+            //     continue;
 
             //todo: get list of concepts
             //iconize concepts
-            let rti = RecTypes.filter(x => x.name == recType);
-            icon = "";
-            iconColor = "";
-            styleTag = "";
+            // let rti = RecTypes.filter(x => x.name == recType);
+            // icon = "";
+            // iconColor = "";
+            // styleTag = "";
 
-            if (rti.length > 0) {
-                icon = rti[0].icon;
-                iconColor = `color:${rti[0].textColor};`;
-                styleTag = `style="${iconColor}"`;
-            }
+            // if (rti.length > 0) {
+            //     icon = rti[0].icon;
+            //     iconColor = `color:${rti[0].textColor};`;
+            //     styleTag = `style="${iconColor}"`;
+            // }
 
-            //if (icon == "")
-            //    continue;
+            // //if (icon == "")
+            // //    continue;
 
-            let iconTag = `<span style="font-size: 40px; ${iconColor}">
-                                <i class="${icon}"></i>
-                            </span>`;
+            // let iconTag = `<span style="font-size: 40px; ${iconColor}">
+            //                     <i class="${icon}"></i>
+            //                 </span>`;
             //divRecords = buildRecords(recType, master2[i][1], master2[i][12]);
 
 
 
-            let value = master2[i][15];
+            let value = `-${master2[i][15].toString()}`;
+            if ( value == "" )
+                value = master2[i][16].toString();
+
             divRecords = "";
 
+            hora = "00:00";
+            if ( isDate(master2[i][12]))
+            {
+                //hora = dth.hour;
+                hora = master2[i][12].toLocaleTimeString('es-UY')
+            }
+
+            dth = dth.getFromDateObject(master2[i][12]);
             row = `${row}
                 <div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
                     <div class="col-md-2" ${styleTag}>
                         ${days[master2[i][9] + 1]} 
-                        ${months[master2[i][7]]}-${master2[i][8]}
+                        ${months[master2[i][7]]}-${master2[i][8]} ${hora}
                     </div>
                     <div class="col-md-5" ${styleTag} >
                     ${master2[i][13]}
                     </div>
                     <div class="col-md-3" ${styleTag} >
-                    ${master2[i][14]}
+                    ${replace(master2[i][14],'"',"")}
                     </div>
                     <div class="col-md-2" ${styleTag} >
-                    ${master2[i][15]}
+                    ${value}
                     </div>
                 </div>
                 <div id="detail${master2[i][1]}" class="row">
@@ -99,7 +114,6 @@ function renderMaster() {
         }
     }
     row = `${row}</div>`;
-    countGluc--;
     let glucTotalsHtml = getGlucTotals();
     writeInnerHtml("btnReport", "Reporte");
     writeInnerHtml("report", row);

@@ -130,7 +130,7 @@ class DateHelper {
         this.S = this.dt.getSeconds();
         this.dateYMD = `${this.Y}-${this.padLeft(this.M)}-${this.padLeft(this.D)}`;
         this.dateDMY = `${this.padLeft(this.D)}-${this.padLeft(this.M)}-${this.Y}`;
-        this.hour = `${this.padLeft(this.H)}:${this.padLeft(this.Mi)}:${this.padLeft(this.S)}`;
+        this.hour = `${this.padLeft(this.H)}:${this.padLeft(this.Mi)}`; //:${this.padLeft(this.S)}`;
         this.days = this.dt.getTime() - this.startDate.getTime();
         this.days = this.days / (1000 * 60 * 60 * 24);
         this.minutes = this.H * 60 + this.Mi;

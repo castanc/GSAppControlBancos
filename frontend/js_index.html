@@ -21,6 +21,18 @@
     let lastUrl = "";
     let htmlMediosPago = "";
     let htmlMonedas = "";
+    let recFilter = "";
+    let lastValue = null;
+    let totalDeb = 0;
+    let totalCred = 0;
+    let granTotalDeb = 0;
+    let granTotalCred = 0;
+    let breakCol = 7;
+    let breakValue = 0;
+    let breakRows = 0;
+
+    let sortCol = 5;
+    let isDebit = false;
 
     let days = "Todos,Dom,Lun,Mar,Mie,Jue,Vie,Sab,Dom".split(",");
     let dow = [
@@ -35,6 +47,8 @@
 
     let selectedDOW = dow;
     let months = "Todos,Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic".split(",");
+
+
     let recTypes = "";
     let filterRT = "";
     let filterMes = "";
@@ -61,13 +75,6 @@
     let subtitle = "";
     let fechaDesde = "";
     let overrideLocalStorage = false;
-
-
-
-
-
-
-
 
 
     function addLog(title, text, method = "", obj = "", show = false, level = 0) {
@@ -244,6 +251,8 @@
         }
     }
 
+
+
     function buildDate(dt, hora) {
 
         try {
@@ -268,20 +277,33 @@
     }
 
     function sortFunction(a, b) {
+        let value = 0;
+        let value1 = 0;
+        if (sortCol > 14) {
+            if (a[15] == "") {
+                value = a[16];
+                value1 = b[16];
+            }
+            else {
+                value = a[15];
+                value1 = a[15];
+            }
+        }
+        else {
+            value = a[sortCol];
+            value1 = b[sortCol];
+        }
 
-
-        if (a[5] === b[5]) {
+        if (value == value1) {
             return 0;
         }
         else {
             if (sortDescending)
-                return (a[5] > b[5]) ? -1 : 1;
+                return (value > value1) ? -1 : 1;
             else
-                return (a[5] < b[5]) ? -1 : 1;
+                return (value < value1) ? -1 : 1;
         }
     }
-
-
 
 
     function renderFoodItemsReadOnly(div = "rows") {
@@ -496,11 +518,44 @@
     }
 
     function sort() {
+        sortCol = 5;
+        breakCol = 7;
         showDiv("spinner");
         sortDescending = !sortDescending;
         renderMaster();
         hideDiv("spinner");
     }
+
+    function sortConcepto() {
+        sortCol = 13;
+        breakCol = 13;
+        showDiv("spinner");
+        sortDescending = !sortDescending;
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+    function sortComprobante() {
+        sortCol = 14;
+        breakCol = 7;
+        showDiv("spinner");
+        sortDescending = !sortDescending;
+        renderMaster();
+        hideDiv("spinner");
+
+    }
+
+    function sortValor() {
+        sortCol = 15;
+        breakCol = 7;
+        showDiv("spinner");
+        sortDescending = !sortDescending;
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+
+
 
     function sortArray(arr, col, desc = true) {
         return arr.sort(sortFunction);
@@ -509,20 +564,29 @@
 
     function filtrar() {
         showDiv("spinner");
-        horaDesde = Data.get("HORA_DESDE");
-        horaHasta = Data.get("HORA_HASTA");
-        minutes1 = getMinutes(horaDesde);
-        minutes2 = getMinutes(horaHasta);
-        let x = Data.getNumber("GLUC_DESDE");
-        glucMin = x;
-        x = Data.getNumber("GLUC_HASTA");
-        glucMax = x;
         console.log("Data", Data);
         console.log(`filtrar() ${horaDesde} ${horaHasta} ${glucMin} ${glucMax},x:${x}`);
         renderMaster();
         hideDiv("spinner");
     }
 
+    function isDate(dt) {
+        let result = true;
+        if (Object.prototype.toString.call(dt) === "[object Date]") {
+            // it is a date
+            if (isNaN(dt.getTime())) {  // d.valueOf() could also work
+                // date is not valid
+                result = false;
+            } else {
+                // date is valid
+                result = true;
+            }
+        } else {
+            result = false;
+        }
+        return result;
+
+    }
 
 
     function closeedit() {
@@ -533,73 +597,234 @@
         newRecord();
     }
 
-
-
-    function drawChart() {
-        let fontSize = "font-size:22px;";
+    function renderMaster() {
+        let recType = "";
+        let classText = "";
+        let icon = "";
+        let iconColor = "";
+        let fontSize = "font-size:26px;";
+        let styleTag = `style="${fontSize}"`;
         let color = "color:white;";
         let style = `style="${fontSize} ${color}"`;
-        let percText = "";
-        let totalPerc = 0;
-        let count = 0;
+        let dth = new DateHelper();
+        let hora = "";
+        let styleValor = "";
+        let diffBG = "";
+        let concepto = "";
 
-        let html = `<div class="row" ${style}><div class="col-md-2">
-            Rango</div>
-            <div class="col-md-1" ${style}>
-                Cant</div>
-            <div class="col-md-9" ${style}>%</div></div>`;
+        if (master == null) {
+            return;
+        }
+        if (master.length < 1)
+            return;
 
-        GlucLevels.forEach(item => {
-            count += item.count;
-        });
+        showDiv("content");
+        hideDiv("DIVrecType");
+        hideDiv("SELECT_RT");
 
-        GlucLevels.forEach(item => {
-            let x = (item.count / count) * 100;
-            totalPerc += x;
-            percText = `${(parseFloat(x).toFixed(0) + "%")}`;
-            style = `style="background-color: ${item.backgroundColor}; width: ${x * 10}px"`;
+        let row = `<div style="${fontSize}">
+        <hr>
+        <div class="row">
+        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
+        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
+        <div class="col-md-3">Compr. <i class="fas fa-sort fa-2x" onclick="sortComprobante()"></i></div>
+        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
+        </div>
+        `;
 
-            html = `${html}<div class="row" style="${fontSize} ${color}">`;
+        if (master.length > 0) {
 
-            html = `${html}
-            <div class="col-md-2" style="background-color: ${item.backgroundColor};">
-                ${item.min}->${item.max}
-            </div>
-            <div class="col-md-1" style="background-color: ${item.backgroundColor};">
-                ${item.count} 
-            </div>`
+            let master2;
+            master2 = sortArray(master, 3);
 
-            if (item.count > 0) {
-                html = `${html}
-                <div class="col-md-9">
-                <div ${style}>${percText}</div>
-                </div>`
+
+
+            let divRecords = "";
+            diffBG = "background-color:gainsboro;";
+            totalDeb = 0;
+            totalCred = 0;
+            granTotalCred = 0;
+            granTotalDeb = 0;
+            for (var i = 0; i < master2.length; i++) {
+                if (master2[i].length < 9)
+                    continue;
+
+
+                recType = master2[i][10].trim();
+
+                styleValor = "";
+                styleTag = "";
+                let value = 0;
+                if (i % 2 == 0)
+                    styleTag = `style="${diffBG}"`;
+
+                concepto = master2[i][13];
+                if (concepto.length > 23)
+                    concepto = `${concepto.substr(0, 20)}...`;
+
+                if (master2[i][15].toString() == "") {
+                    value = master2[i][16];
+                    isDebit = false;
+                    if (i % 2 == 0)
+                        styleValor = `style="${diffBG}"`
+                }
+                else {
+                    value = master2[i][15];
+                    isDebit = true;
+                    styleValor = `style="color:red;"`
+                    if (i % 2 == 0)
+                        styleValor = `style="${diffBG} color:red;"`
+                }
+
+                if (lastValue == null)
+                    lastValue = master2[i][breakCol];
+
+                //todo: get breakValue according to sortCol
+
+                divRecords = "";
+
+                // hora = "00:00";
+                // if (isDate(master2[i][12])) {
+                //     hora = master2[i][12].toLocaleTimeString('es-UY')
+                // }
+
+                //todo if breakRows == 1, do not print totals
+
+                if (lastValue != master2[i][breakCol]) {
+                    if (breakRows > 1 && sortCol < 14 ) {
+                        if (totalDeb > 0) {
+                            row = `${row}
+                        <div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        Total Débitos
+                        </div>
+                        <div class="col-md-2 text-right" style="color:red;">
+                        ${formatMoney(totalDeb)}
+                        </div>
+                        </div>`;
+                        }
+                        if (totalCred > 0) {
+                            row = `${row}
+                        <div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        Total Créditos
+                        </div>
+                        <div class="col-md-2 text-right">
+                        ${formatMoney(totalCred)}
+                        </div>
+                        </div>`;
+                        }
+                    }
+                    if (totalDeb + totalCred > 0)
+                            row = `${row}<div class="row"><div class="col-md-12"></div></div>`;
+                    lastValue = master2[i][breakCol];
+                    totalCred = 0;
+                    totalDeb = 0;
+                    breakRows = 0;
+                }
+                else breakRows++;
+
+
+                if (isDebit) {
+                    totalDeb += value;
+                    granTotalDeb += value;
+                }
+                else {
+                    totalCred += value;
+                    granTotalCred += value;
+                }
+
+                row = `${row}
+                <div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
+                    <div class="col-md-2" ${styleTag}>
+                        ${days[master2[i][9] + 1].substr(0, 2)} 
+                        ${months[master2[i][7]]}-${master2[i][8]}
+                    </div>
+                    <div class="col-md-5 fit-text" ${styleTag}>
+                    ${concepto}
+                    </div>
+                    <div class="col-md-3 fit-text" ${styleTag}>
+                    ${replace(master2[i][14], '"', "")}
+                    </div>
+                    <div class="col-md-2 text-right" ${styleValor}>
+                    ${formatMoney(value)}
+                    </div>
+                </div>
+                <div id="detail${master2[i][1]}" class="row">
+                </div>`;
             }
-            html = `${html}</div>`;
+        }
+        row = `${row}</div>`;
 
-        })
-        style = `style="${fontSize} ${color}"`;;
-        percText = `${(parseFloat(totalPerc).toFixed(0) + "%")}`;
-        html = `${html}<div class="row" ${style}">
-            <div class="col-md-2">
-                Totales
+        if (totalDeb > 0) {
+            row = `${row}
+                        <div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        Total Débitos
+                        </div>
+                        <div class="col-md-2 text-right" style="color:red;">
+                        ${formatMoney(totalDeb)}
+                        </div>
+                        </div>`;
+        }
+        if (totalCred > 0) {
+            row = `${row}
+                        <div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        Total Créditos
+                        </div>
+                        <div class="col-md-2 text-right">
+                        ${formatMoney(totalCred)}
+                        </div>
+                        </div>`;
+        }
+        row = `${row}<div class="row"><div class="col-md-12"></div></div>`;
+
+        if (breakCol < 14) {
+            if (granTotalDeb > 0) {
+                row = `${row}
+            <div class="row">
+            <div class="col-md-2" ${styleTag}>
             </div>
-            <div class="col-md-1" >
-                ${count} 
+            <div class="col-md-8" ${styleTag}>
+            Gran Total Débitos
             </div>
-            <div class="col-md-1">
-                ${percText}
-            </div>  
-            <div class="col-md-8">
-            </div>             
-        </div>`;
+            <div class="col-md-2 text-right" style="color:red;">
+            ${formatMoney(granTotalDeb)}
+            </div>
+            </div>`;
+            }
+            if (granTotalCred > 0) {
+                row = `${row}
+            <div class="row">
+            <div class="col-md-2" ${styleTag}>
+            </div>
+            <div class="col-md-8" ${styleTag}>
+            Gran Total Créditos
+            </div>
+            <div class="col-md-2 text-right">
+            ${formatMoney(granTotalCred)}
+            </div>
+            </div>`;
+            }
+        }
 
-
-
-        return html;
-
-
+        writeInnerHtml("btnReport", "Reporte");
+        writeInnerHtml("report", row);
+        setFilterData();
     }
+
+
+
+
 
     function buildFiltros() {
         let fontSize = "font-size:22px;";
@@ -613,19 +838,6 @@
                 </div>
                 <div class="row">
                     <p class="text-center">Filtros</p>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        Hora
-                    </div>
-                    <div class="col-md-5 big-font">
-                        <input type="time" class="form-control big-font" id="HORA_DESDE" name="HORA_DESDE" 
-                        oninput="onInputField(this.id,this.value)"> 
-                    </div>
-                    <div class="col-md-5 big-font">
-                        <input type="time" class="form-control big-font"  id="HORA_HASTA" name="HORA_HASTA" 
-                        oninput="onInputField(this.id,this.value)"> 
-                    </div>
                 </div>
 
                 <div class="row">
@@ -676,7 +888,7 @@
         let style = `style="${fontSize} ${color}"`;
 
         let totalsHtml = "";
-        let chart = drawChart();
+        let chart = "";
 
         totalsHtml = `<div class="row"><hr></div>
         <div class="row">
@@ -699,8 +911,6 @@
         return totalsHtml;
     }
 
-    //https://gist.github.com/kparms/9486604
-    //THANKS!
     function drawPercentBar(width, percent, color, background) {
         var barhtml = "";
         var pixels = width * (percent / 100);
@@ -723,7 +933,7 @@
     }
 
 
-    
+
 
 
     function renderDrugItems(div = "rows") {
@@ -942,6 +1152,7 @@
         showDiv("spinner");
         subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
         disableButtons(true);
+        console.log("loadRepord() Data", JSON.stringify(Data));
         google.script.run.withFailureHandler(failureHandler)
             .withSuccessHandler(processResponseReport)
             .report(Data);
@@ -1001,9 +1212,10 @@
             //if ( recType == "BROU")
             //    Data.update("EXTRACTO_BROU",getValue("EXTRACTO_BROU"));
 
-            console.log(Data);
-            console.log("Data", Data);
+            console.log("processForm() Data", Data);
             newRecord();
+            localStorage.setItem("data", JSON.stringify(Data));
+
 
             google.script.run.withFailureHandler(failureHandler)
                 .withSuccessHandler(processResponSubmitForm)
@@ -1065,8 +1277,6 @@
             //todo: show only if form modified
             master = response.master;
             detail = response.detail;
-            minutes1 = getMinutes(Data.get("HORA_DESDE"));
-            minutes2 = getMinutes(Data.get("HORA_HASTA"));
             disableButtons(false);
             hideDiv("DIVfechaHora");
             hideDiv("DIVrecType")
@@ -1099,15 +1309,14 @@
 
     function setReportDates() {
 
-        requiredFields = "FECHA_DESDE,FECHA_HASTA,HORA_DESE,HORA_HASTA,REC_FILTER,DAY_FILTER";
+        requiredFields = "FECHA_DESDE,FECHA_HASTA,REC_FILTER,CONCEPTO,DAY_FILTER";
         initializeData(requiredFields);
-        Data.update("REC_TYPE","REP");
+        Data.update("REC_TYPE", "REP");
         hideDiv("submitArea");
 
         dt = new Date();
         let dth = new DateHelper();
         dth = dth.getFromDateObject(dt);
-        console.log("dth",dth);
 
         let fecha = getDateYMD(dt);
         fecha = dth.dateYMD;
@@ -1116,7 +1325,6 @@
         let dt1 = new Date(dt.getFullYear(), 0, 1);
         let dth2 = new DateHelper();
         dth2 = dth2.getFromDateObject(dt1);
-        console.log("dth2",dth2);
         fecha = dth2.dateYMD;   //getDateYMD(dt1);
         setValueAndData("FECHA_DESDE", fecha);
 
@@ -1127,12 +1335,10 @@
 
     function setFilterData() {
 
-        //requiredFields = "HORA_DESDE,HORA_HASTA,GLUC_DESDE,GLUC_HASTA,DIA_SEMANA";
+        //requiredFields = "GLUC_DESDE,GLUC_HASTA,DIA_SEMANA";
         //initializeData(requiredFields);
         hideDiv("submitArea");
 
-        setValueAndData("HORA_DESDE", horaDesde);
-        setValueAndData("HORA_HASTA", horaHasta);
     }
 
     function clearLocalStorage() {
@@ -1146,7 +1352,7 @@
 
     }
     async function logServer(msg, data) {
-        console.log("logServer()",msg,data);
+        console.log("logServer()", msg, data);
         google.script.run.withFailureHandler(failureHandler)
             .withSuccessHandler(processLogResponse)
             .log(msg, data);
@@ -1165,7 +1371,6 @@
 
         html = "";
         html = localStorage.getItem("content_REP");
-        logServer("reprot htmlf rom local storage:",`[${html}]`);
 
         if (html == null || html == undefined)
             html = "";
@@ -1190,32 +1395,6 @@
 
     }
 
-    function reportYear() {
-        showDiv("spinner");
-        editMode = true;
-        setReportDates();
-
-        let fecha = getValue("FECHA");
-        let dt = getDateFromYMD(fecha);
-        let dtDesde = new Date(dt.getFullYear(), 0, 1);
-        Data.update("FECHA_DESDE", getDateYMD(dtDesde));
-
-        let dtHasta = new Date(dt.getFullYear(), 11, 31);
-
-
-        Data.update("FECHA_HASTA", getDateYMD(dtHasta));
-
-        action = "Reporte";
-        console.log("reportYear", Data);
-
-        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
-
-
-        google.script.run.withFailureHandler(failureHandler)
-            .withSuccessHandler(processResponseReport)
-            .report(Data);
-
-    }
 
     function enableMenu(enable, disable) {
         let d = disable.split(",");
@@ -1223,36 +1402,6 @@
             hideDiv(item);
         })
         showDiv(enable);
-    }
-    function reportMes() {
-        showDiv("spinner");
-        editMode = true;
-        setReportDates();
-        let fecha = getValue("FECHA");
-        let dt = getDateFromYMD(fecha);
-        let dtDesde = new Date(dt.getFullYear(), dt.getMonth(), 1);
-        Data.update("FECHA_DESDE", getDateYMD(dtDesde));
-
-        let dtHasta = new Date();
-        if (dt.getMonth() < 11)
-            dtHasta = new Date(dt.getFullYear(), dt.getMonth() + 1, 1);
-        else
-            dtHasta = new Date(dt.getFullYear() + 1, 0, 1);
-
-        dtHasta.setDate(dtHasta.getDate() - 1);
-
-        console.log("dtHasta", Data, dtHasta);
-        Data.update("FECHA_HASTA", getDateYMD(dtHasta));
-
-        action = "Report";
-        console.log("reportMes", Data);
-        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
-
-
-        google.script.run.withFailureHandler(failureHandler)
-            .withSuccessHandler(processResponseReport)
-            .report(Data);
-
     }
 
 
@@ -1263,6 +1412,7 @@
     }
 
     function processResponse(json) {
+        localStorage.setItem("response", json);
         response = JSON.parse(json);
         console.log("processResponse() Response received from Server:", response);
         console.log("Data", Data);
@@ -1295,10 +1445,25 @@
         }
     }
 
+    function onchange_CO(e) {
+        Data.update("CONCEPTO", e);
+    }
 
-    
+    function onchange_RT2(e) {
+        Data.update("REC_FILTER", e);
+        recFilter = e;
+        if (recFilter == "BROU") {
+            let htmlConcepto = getSelect("CO", Items.arr.filter(x => x[2] == `C${recType}`), 3, 4, "Concepto", "", true);
+            writeInnerHtml("SELECT_CONCEPTO", htmlConcepto);
+        }
+
+
+    }
+
     function processResponseLoadReportForm(json) {
         processResponse(json);
+        let htmlRecType2 = getSelect("RT2", Items.arr.filter(x => x[2] == "RT"), 3, 4, "Tipo Registro", "", true);
+        writeInnerHtml("tipoRegistro", htmlRecType2);
         hideDiv("mainContent");
         setReportDates();
         setFilterData();
@@ -1356,7 +1521,6 @@
 
         disableButtons(false);
         showMessage("Ready");
-        console.log("newRecord END");
     }
 
     function initialize() {
@@ -1365,18 +1529,14 @@
         hideDiv("reportArea");
         hideDiv("submitArea");
         console.log("initialize");
-        console.log("Items");
 
         let arr = Items.arr.filter(x => x[2] == "RT");
-        console.log("arr:", arr);
-        htmlRecType = getSelect("RT", arr, 3, 4, "Tipo Gasto", "", true);
+        htmlRecType = getSelect("RT", arr, 3, 4, "Tipo Registro", "", true);
         writeInnerHtml("REC_TYPE", htmlRecType);
         newRecord();
 
 
         showMessage("Ready");
-
-        console.log("items.arr", Items.arr);
         hideDiv("spinner");
 
 
@@ -1457,24 +1617,6 @@
 
     }
 
-    function onchange_MT(e) {
-        Data.update("MEAL_TYPES", e);
-    }
-
-
-    function onchange_EV(e) {
-        Data.update("EVENTID", e);
-    }
-
-
-
-
-
-
-
-
-
-
     function onSuccess(html) {
         refreshDate();
 
@@ -1523,4 +1665,9 @@
         return false;
     }
 
+    function filtrar() {
+        showDiv("spinner");
+        renderMaster();
+        hideDiv("spinner");
+    }
 </script>
