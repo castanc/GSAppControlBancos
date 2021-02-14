@@ -646,10 +646,7 @@
                         <div class="col-md-2 text-right" style="color:red;">${formatMoney(value)}</div>
                     </div>`;
         if (addLine)
-            line = `${line}
-            <div class="row">
-                <hr>
-            </div>`;
+            line = `${line}<div class="row"><div class="col-md-12"></div></div>`;
         return line;
     }
 
@@ -667,19 +664,7 @@
         `;
     }
 
-    function getHeaderAnda(fontSize) {
-        return `<div style="${fontSize}">
-        <hr>
-        <div class="row">
-        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
-        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
-        <div class="col-md-3">Origen.<i class="fas fa-sort fa-2x" onclick="sortFechaRetiro()"></i></div>
-        <div class="col-md-3">Pend. </div>
-        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
-        </div>
-        `;
-    }
-
+   
     function renderMaster() {
         let recType = "";
         let classText = "";
@@ -826,189 +811,9 @@
         row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, styleTag)}`;
 
         writeInnerHtml("btnReport", "Reporte");
-        localStorage.setItem("reporte",row);
         writeInnerHtml("report", row);
         setFilterData();
     }
-
-
-    function buildFiltros() {
-        let fontSize = "font-size:22px;";
-        let color = "color:white;";
-        let style = `style="${fontSize} ${color}"`;
-
-        let filtros = `
-            <div ${style}>
-                <div class="row">
-                    <hr>
-                </div>
-                <div class="row">
-                    <p class="text-center">Filtros</p>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-2">
-                        Gluc
-                    </div>
-                    <div class="col-md-5 big-font">
-                        <input type="number" class="form-control big-font" id="GLUC_DESDE" name="GLUC_DESDE" 
-                        oninput="onInputField(this.id,this.value)"> 
-                    </div>
-                    <div class="col-md-5 big-font">
-                        <input type="number" class="form-control big-font" id="GLUC_HASTA" name="GLUC_HASTA" 
-                        oninput="onInputField(this.id,this.value)"> 
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        Registro
-                    </div>
-                    <div class="col-md-10 big-font">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        Dia
-                    </div>
-                    <div class="col-md-10 big-font">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                    </div>
-                    <div class="col-md-1">
-                        <i class="fas fa-filter fa-3x"  onclick="filtrar()"></i>
-                    </div>
-                    <div class="col-md-1">
-                        <i class="fas fa-sort fa-3x"  onclick="sort()"></i>
-                    </div>
-                    <div class="col-md-8"></div>
-                </div>
-            </div>`;
-        return filtros;
-
-    }
-    function getGlucTotals() {
-        let fontSize = "font-size:22px;";
-        let color = "color:white;";
-        let style = `style="${fontSize} ${color}"`;
-
-        let totalsHtml = "";
-        let chart = "";
-
-        totalsHtml = `<div class="row"><hr></div>
-        <div class="row">
-            <div class="col-md-12">
-                <p class="text-info text-center">
-                Mediciones de Glucogeno ${subtitle}
-                </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                ${chart}
-            </div>
-        </div>
-        ${buildFiltros()}
-        `;
-
-
-
-        return totalsHtml;
-    }
-
-    function drawPercentBar(width, percent, color, background) {
-        var barhtml = "";
-        var pixels = width * (percent / 100);
-        if (!background) { background = "none"; }
-
-        barhtml = "<div style=\"position: relative; line-height: 1em; background-color: "
-            + background + "; border: 1px solid white; width: "
-            + width + "px\">";
-
-        barhtml += "<div style=\"height: 1.5em; width: " + pixels + "px; background-color: "
-            + color + ";\"></div>";
-
-        let textPercent = `${(parseFloat(percent).toFixed(0) + "%")}`;
-        barhtml += "<div style=\"position: absolute; text-align: center; padding-top: .25em; width: "
-            + width + "px; top: 0; left: 0\">" + textPercent + "</div>";
-
-        barhtml += "</div>";
-
-        return barhtml;
-    }
-
-
-
-
-
-    function renderDrugItems(div = "rows") {
-
-        let row = "";
-        if (records.length > 0) {
-
-            row = `<div class="row row-fat">
-                <div class="col-md-1"></div>
-            <div class="col-md-1"></div>
-            <div class="col-md-8">Drug Item</div>
-            <div class="col-md-2">Cant</div>
-            </div>
-            `;
-
-            for (var i = 0; i < records.length; i++) {
-                row = `${row}
-            <div class="row cursorPointer">
-                <div class="col-md-1">
-                    <img src="${records[i].url}" class="thumb"></img>
-                    </div>
-                <div class="col-md-1"><i class="fas fa-trash-alt"  onclick="removeDrug('${DrugItems}',${i})"></i></div>
-                <div class="col-md-8" >${records[i].descr}</div>
-                <div class="col-md-2">
-                    <input type="number" id="q{${i}} name="q${i}" placeholder="Cant" value="${records[i].cant}" onchange="setRecord(${i},this.value)">
-                </div>
-            </div>`;
-            }
-        }
-        writeInnerHtml(div, row);
-    }
-
-
-    function renderExeItems(div = "rows") {
-        let row = "";
-        if (records.length > 0) {
-
-            row = `<div class="row row-fat">
-            <div class="col-md-1"></div>
-            <div class="col-md-1"></div>
-            <div class="col-md-4">Sport</div>
-            <div class="col-md-1">Dist</div>
-            <div class="col-md-1">Un</div>
-            <div class="col-md-2">Time</div>
-            </div>
-            `;
-
-            for (var i = 0; i < records.length; i++) {
-                row = `${row}
-            <div class="row row-fat">
-                <div class="col-md-1"></div>
-                <div class="col-md-1 cursorPointer"><i class="fas fa-trash-alt"  onclick="removeExe('${DrugItems}',${i})"></i></div>
-                <div class="col-md-4">${records[i].descr}</div>
-                <div class="col-md-1">
-                    <input type="number" id="q{${i}} name="q${i}" placeholder="Dist" value="${records[i].cant}" onchange="setRecord(${i},this.value)">
-                </div>
-                <div class="col-md-2">
-                    ${records[i].unit}
-                </div>
-                <div class="col-md-3">
-                    <input type="number" id="h{${i}} name="t${i}" placeholder="HH:MM:SS" pattern="^([0-1]?[0-9]|2[0-4]):([0-5][0-9])(:[0-5][0-9])?$" value="${records[i].time}" onchange="setTime(${i},this.value)">
-                </div>
-            </div>`;
-            }
-        }
-        writeInnerHtml(div, row);
-    }
-
-
 
     function getSelect(name, arr, idCol = 0, valueCol = 1, title = "", selectedValue = "", req = false, startRow = 0) {
         let options = "";
@@ -1078,18 +883,6 @@
         }
 
     }
-
-    function addFoodItem(itemId) {
-        record.itemId = itemId;
-        record.id = records.length;
-        records.push(record);
-        let row = `<tr><td>Food Item</td><td>Cant</td><td>Image</td></tr>`;
-        for (var i = 0; i < records.length; i++) {
-            row = `${row}
-      <tr><td>Food Item</td><td>Cant</td><td>Image</td></tr>`;
-        }
-    }
-
 
     function onBlurField(id, value) {
         console.log(`onBlurField() ${id} ${value}`);
@@ -1668,6 +1461,13 @@
 
     }
 
+    function filtrar() {
+        showDiv("spinner");
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+
     //Main entry point
     console.log("js_index onLoad")
     window.addEventListener('load', initialize);
@@ -1679,9 +1479,4 @@
         return false;
     }
 
-    function filtrar() {
-        showDiv("spinner");
-        renderMaster();
-        hideDiv("spinner");
-    }
 </script>

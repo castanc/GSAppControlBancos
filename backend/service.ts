@@ -304,7 +304,10 @@ export class Service {
         var column = sheet.getRange("A1:A");
         column.setNumberFormat("@");
 
-        var column = sheet.getRange("C1:C");
+        column = sheet.getRange("C1:C");
+        column.setNumberFormat("@");
+
+        column = sheet.getRange("D1:D");
         column.setNumberFormat("@");
 
         var rangeData = sheet.getDataRange();
@@ -404,7 +407,7 @@ export class Service {
                     if (c[3].length == 0)
                         data2.update("COMPROBANTE", "");
                     else
-                        data2.update("COMPROBANTE", `"${c[3]}"`);
+                        data2.update("COMPROBANTE", c[3]);
 
                     data2.update("DEBITO", c[5]);
                     data2.update("CREDITO", c[6]);
@@ -542,7 +545,7 @@ export class Service {
                 data2.update("REC_TYPE", recType);
                 data2.update("TIPOOP", "D");
 
-                startCuotaSocial = (c[2].indexOf("CUOTA SOCIAL") >= 0;
+                startCuotaSocial = c[2].indexOf("CUOTA SOCIAL") >= 0;
                 c = c[2].split(" ");
                 SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(c));
 
@@ -553,6 +556,7 @@ export class Service {
                         data2.update("TOTAL_CUOTAS", cuotas[1]);
                         dht = dht.getFromDMYHMS(c[c.length - 3], "/");
                         data2.update("FECHA_RETIRO", dht.dateYMD);
+                        data2.update("COMPROBANTE",`${dht.dateYMD} P:${cuotas[1]-cuotas[0]}`)
                     }
                 }
                 else {
@@ -560,6 +564,7 @@ export class Service {
                     data2.update("CUOTA", 1);
                     data2.update("TOTAL_CUOTAS", 1);
                     data2.update("FECHA_RETIRO", "");
+                    data2.update("COMPROBANTE","")
                 }
                 data2.update("DEBITO", this.getMoneyValue(c[c.length - 1]));
                 let concepto = "";
@@ -816,8 +821,8 @@ export class Service {
 
             let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
             response.addHtml("filtros", filtrosHtml);
-            SysLog.log(0, "response", "report", JSON.stringify(response));
         }
+        SysLog.log(0, "response", "report", JSON.stringify(response));
         return response;
     }
 

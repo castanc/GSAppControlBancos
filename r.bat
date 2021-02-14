@@ -1,0 +1,1 @@
+call "C:\Users\noadmin\AppData\Local\Programs\Opera GX\launcher.exe" https://script.google.com/macros/s/AKfycbzGbNOxtYpquShLdLgNURkNEIV74AKezl7qKNMKtzv5D5WXUF601XiQxA/exec

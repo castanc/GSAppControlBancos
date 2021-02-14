@@ -231,7 +231,7 @@ function handleException(ex, response, method = "", additional = "") {
     SysLog.logException(ex, method, additional)
 }
 
-function getForm(controlId, formId, formUrl): string {
+function getForm(formId, controlId = "", formUrl): string {
     var response = new GSResponse();
 
     response.controlId = controlId;
