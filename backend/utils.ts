@@ -701,7 +701,7 @@ export class Utils {
     }
 
     static getTextFileFromFolder(folder, fileName: string) {
-        let file = Utils.getFileFromFolder(folder, fileName)
+        let file = Utils.getFileFromFolder(fileName, folder)
         if (file != null)
             return file.getBlob().getDataAsString();
         return "";

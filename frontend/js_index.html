@@ -697,7 +697,7 @@
     function getLineStyle(i, isDebit, diffBG) {
         let styleTag = "";
 
-        if ( isDebit)
+        if (isDebit)
             styleTag = `style="color:red;"`;
         else
             styleTag = `style="color:white;"`;
@@ -723,7 +723,7 @@
         let diffBG = "";
         let concepto = "";
         let totalStyle = "color:blue";
-        
+
 
         showDiv("content");
         hideDiv("DIVrecType");
@@ -790,18 +790,18 @@
                     row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
                 }
                 if (lastValue != master2[i][breakCol]) {
-                    if (breakRows > 1 && sortCol < 14) {
-                        
+                    if (breakRows > 1 && sortCol < 13) {
+
                         if (breakCol == 7) {
-                            row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]} ${lastYear}`, totalDeb, 
-                                totalStyle,getLineStyle(i+1,true, diffBG))}`
-                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]} ${lastYear}`, totalCredYear, 
-                                totalStyle,getLineStyle(i+2,false, diffBG), true)}`;
+                            row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]} ${lastYear}`, totalDeb,
+                                totalStyle, getLineStyle(i + 1, true, diffBG))}`
+                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]} ${lastYear}`, totalCredYear,
+                                totalStyle, getLineStyle(i + 2, false, diffBG), true)}`;
 
                         }
                         else {
-                            row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, totalStyle,getLineStyle(i+1,true, diffBG))}`
-                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG), true)}`;
+                            row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, totalStyle, getLineStyle(i + 1, true, diffBG))}`
+                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG), true)}`;
                         }
                     }
                     lastValue = master2[i][breakCol];
@@ -811,11 +811,11 @@
                 }
                 else breakRows++;
 
-                if (lastYear != master2[i][6] && sortCol < 14) {
+                if (lastYear != master2[i][6] && sortCol < 13) {
                     yearsInReport++;
                     if (sortCol < 14) {
-                        row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
-                        row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
+                        row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle, getLineStyle(i + 1, true, diffBG))}`;
+                        row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG))}`;
                     }
                     lastYear = master2[i][6];
                     totalDebYear = 0;
@@ -859,19 +859,19 @@
                 row = `${row}${r}`;
             }
         }
-        if (sortCol < 14) {
-            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
-            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
+        if (sortCol < 13) {
+            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle, getLineStyle(i + 1, true, diffBG))}`;
+            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG))}`;
         }
 
-        if (yearsInReport > 1 && sortCol < 14) {
-            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
-            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
+        if (yearsInReport > 1 && sortCol < 13) {
+            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle, getLineStyle(i + 1, true, diffBG))}`;
+            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG))}`;
         }
 
 
-        row = `${row}${getTotalRow("Gran Total Débitos", granTotalDeb, totalStyle,getLineStyle(i+1,true, diffBG))}`;
-        row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, totalStyle,getLineStyle(i+2,false, diffBG))}`;
+        row = `${row}${getTotalRow("Gran Total Débitos", granTotalDeb, totalStyle, getLineStyle(i + 1, true, diffBG))}`;
+        row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, totalStyle, getLineStyle(i + 2, false, diffBG))}`;
 
         writeInnerHtml("btnReport", "Reporte");
         localStorage.setItem("reporte", row);
@@ -1211,14 +1211,18 @@
     }
 
     function loadReport() {
-        console.log("loadReport()");
-        showDiv("spinner");
-        subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
-        disableButtons(true);
-        console.log("loadRepord() Data", JSON.stringify(Data));
-        google.script.run.withFailureHandler(failureHandler)
-            .withSuccessHandler(processResponseReport)
-            .report(Data);
+        if (recFilter != "") {
+            console.log("loadReport()");
+            Data.update("REC_FILTER", recFilter);
+            showDiv("spinner");
+            subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
+            disableButtons(true);
+            console.log("loadRepord() Data", Data);
+            google.script.run.withFailureHandler(failureHandler)
+                .withSuccessHandler(processResponseReport)
+                .report(Data);
+        }
+        else showError("Seleccione tipo de registro.");
     }
 
     function processResponseGetFileInfo(json) {
@@ -1433,20 +1437,13 @@
         hideDiv("adminMenu");
         hideDiv("submitArea");
         hideDiv("rows");
+        showDiv("reportFilter");
         recType = "REP";
         writeInnerHtml("title", "Reporte por Rango de Fechas");
 
-        if (!getFromCache("content_REP", "content")) {
-            google.script.run.withFailureHandler(failureHandler)
-                .withSuccessHandler(processResponseLoadReportForm)
-                .getForm("report");
-
-        }
         hideDiv("mainContent");
         hideDiv("spinner");
 
-        let htmlRecType2 = getSelect("RT2", Items.arr.filter(x => x[2] == "RT"), 3, 4, "Tipo Registro", "", true);
-        writeInnerHtml("tipoRegistro", htmlRecType2);
         setReportDates();
         setFilterData();
         showDiv("reportArea");
@@ -1585,6 +1582,7 @@
 
     function initialize() {
         showMessage("© 2021 Cesar Castaño");
+        hideDiv("reportFilter");
         showDiv("spinner");
         hideDiv("reportArea");
         hideDiv("submitArea");
@@ -1593,6 +1591,11 @@
         let arr = Items.arr.filter(x => x[2] == "RT");
         htmlRecType = getSelect("RT", arr, 3, 4, "Tipo Registro", "", true);
         writeInnerHtml("REC_TYPE", htmlRecType);
+
+        htmlRecType = getSelect("RT2", arr, 3, 4, "Tipo Registro", "", true);
+        writeInnerHtml("tipoRegistro", htmlRecType);
+
+
         newRecord();
 
 

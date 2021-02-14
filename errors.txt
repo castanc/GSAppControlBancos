@@ -1,1 +1,2 @@
-backend/service.ts(548,70): error TS1005: ')' expected.
+backend/service.ts(788,46): error TS1127: Invalid character.
+backend/service.ts(791,26): error TS1011: An element access expression should take an argument.

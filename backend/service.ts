@@ -266,6 +266,7 @@ export class Service {
     importBatchBROU(recType, url): FileProcessItem {
 
         let fileName = "";
+        let indexFileName = "";
         let lastRow = 2;
         let ss;
         let sheet;
@@ -284,7 +285,9 @@ export class Service {
         let dht = new DateHelper();
         let indexComprobante = 0;
         let valor = "";
-        let oldFormatDate = new Date(2019, 12, 31);
+        let oldFormatDate = new Date(2019, 1, 1);
+        let lastYear = 0;
+        let indexText = "";
 
 
 
@@ -321,21 +324,6 @@ export class Service {
 
         indexComprobante = data2.getIndex("COMPROBANTE");
 
-        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
-        SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(rt));
-        if (rt.length > 0)
-            fileName = `${rt[0][5]}_Data`;
-        else
-            fileName = `${recType}_Data`;
-
-        ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
-        sheet = ss.getActiveSheet();
-
-
-        range = sheet.getDataRange();
-        lastColumn = range.getLastColumn();
-        lastRow = range.getLastRow() + 1;
-        grid = range.getValues();
 
 
         let id = this.getId("Parameters");
@@ -346,31 +334,45 @@ export class Service {
                 c = gridSource[i];
                 SysLog.log(0, `** PROCESSING ** ${i} invalid date:${dht.invalidDate}`, JSON.stringify(c));
 
-                //if (!this.validateConcepto(c[1]))
-                //    continue;
-
                 dht = dht.getFromDMYHMS(c[0], "/");
-
-
-                //todo: this doesnt work
-
                 if (dht.dt == null || dht.invalidDate)
                     continue;
 
-                dt = dht.dt;
-                if (dt >= oldFormatDate) {
-                    if (c[2].trim() != "") {
-                        let eRow = grid.filter(x => x[indexComprobante] == `"${c[3]}"`)
-                        if (eRow.length > 0) {
-                            fpi.duplicates++;
-                            continue;
+                if (lastYear != dht.Y) {
+                    lastYear = dht.Y;
+                    fileName = `${recType}_${lastYear}_Data`;
+                    ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
+                    sheet = ss.getActiveSheet();
+                    range = sheet.getDataRange();
+                    lastColumn = range.getLastColumn();
+                    lastRow = range.getLastRow() + 1;
+                    //grid = range.getValues();
+
+                    indexFileName = `${fileName}.index`;
+                    if (lastRow <= 2) {
+                        indexText = "";
+                        Utils.writeTextFile(indexFileName, indexText, this.folder);
+                    }
+                    else {
+                        if (indexText.length > 0) {
+                            Utils.writeTextFile(indexFileName, indexText, this.folder);
                         }
+                        indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
                     }
                 }
 
+                dt = dht.dt;
+                if (dt >= oldFormatDate) {
+                    if (c[3].length > 6) {
+                        if (indexText.indexOf(c[3].trim()) >= 0) {
+                            fpi.duplicates++;
+                            SysLog.log(0, `duplicate ${i} ${id}`, JSON.stringify(c));
+                            continue;
+                        }
+                        else indexText += `${c[3].trim()}\t${lastRow}\t${id}\n`;
+                    }
+                }
 
-
-                //dht = dht.getFromDateObject(dt);
                 data2.update("D", dht.D.toString());
                 data2.update("M", dht.M.toString());
                 data2.update("Y", dht.Y.toString());
@@ -385,15 +387,12 @@ export class Service {
                 data2.update("REC_TYPE", recType);
 
                 //todo: conceptos normalize to conceptos items, if new create it
+                data2.update("CONCEPTO", c[1]);
+
                 if (dt < oldFormatDate) {
                     let conc = this.conceptos.filter(x => x[3] == c[1]);
 
-                    data2.update("CONCEPTO", c[1]);
-                    let comprobante = data2.get("COMPROBANTE");
-                    if ( comprobante.length > 10 )
-                        comprobante = `${comprobante.substr(0,6)} ${comprobante.substr(6,4)} ${comprobante.substr(10)}`;
-                        
-                    data2.update("COMPROBANTE", comprobante);
+                    data2.update("COMPROBANTE", c[3]);
                     if (conc.length > 0) {
                         if (conc[0][3] == "D")
                             data2.update("DEBITO", this.getMoneyValue(c[2].toString()));
@@ -406,25 +405,18 @@ export class Service {
                     }
                 }
                 else {
-
-                    data2.update("CONCEPTO", c[1]);
-                    if (c[3].length == 0)
-                        data2.update("COMPROBANTE", "");
-                    else
-                        data2.update("COMPROBANTE", c[2]);
-
-                    data2.update("DEBITO", c[3]);
-                    data2.update("CREDITO", c[4]);
+                    // if (c[3].length > 10) {
+                    //     let co = data2.get("COMPROBANTE");
+                    //     co = `${co.substr(0, 6)} ${co.substr(6, 4)} ${co.substr(10)}`;
+                    //     data2.update("COMPROBANTE", co);
+                    // }
+                    // else
+                    data2.update("COMPROBANTE", c[3]);
+                    data2.update("DEBITO", c[5]);
+                    data2.update("CREDITO", c[6]);
                 }
-
-                let r = new RecordItemBase();
-                r.id = id;
-
                 data2.update("REC_TYPE", recType);
-
                 v = data2.getColValues().split(",");
-
-
                 sheet.appendRow(v);
                 id++;
                 lastRow++;
@@ -442,6 +434,9 @@ export class Service {
 
         id--;
         this.updateId("Parameters", id);
+        if (indexText.length > 0) {
+            Utils.writeTextFile(indexFileName, indexText, this.folder);
+        }
         SysLog.log(0, "load process finished");
 
         Logger.log("RETURNING...");
@@ -471,6 +466,9 @@ export class Service {
         let indexComprobante = 0;
         let valor = "";
         let oldFormatDate = new Date(2019, 12, 31);
+        let lastYear = 0;
+        let indexText = "";
+        let indexFileName = "";
 
 
 
@@ -505,21 +503,29 @@ export class Service {
         data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,FULL_MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA,FECHA_RETIRO,CUOTA,TOTAL_CUOTAS,TIPOOP");
         indexComprobante = data2.getIndex("COMPROBANTE");
 
-        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
-        SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(rt));
-        if (rt.length > 0)
-            fileName = `${rt[0][5]}_Data`;
-        else
-            fileName = `${recType}_Data`;
 
-        ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
-        sheet = ss.getActiveSheet();
+        if (lastYear != dht.Y) {
+            lastYear = dht.Y;
+            fileName = `${recType}_${lastYear}_Data`;
+            ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
+            sheet = ss.getActiveSheet();
+            range = sheet.getDataRange();
+            lastColumn = range.getLastColumn();
+            lastRow = range.getLastRow() + 1;
+            //grid = range.getValues();
 
-
-        range = sheet.getDataRange();
-        lastColumn = range.getLastColumn();
-        lastRow = range.getLastRow() + 1;
-        grid = range.getValues();
+            indexFileName = `${fileName}.index`;
+            if (lastRow <= 2) {
+                indexText = "";
+                Utils.writeTextFile(indexFileName, indexText, this.folder);
+            }
+            else {
+                if (indexText.length > 0) {
+                    Utils.writeTextFile(indexFileName, indexText, this.folder);
+                }
+                indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
+            }
+        }
 
 
         let id = this.getId("Parameters");
@@ -560,7 +566,7 @@ export class Service {
                         data2.update("TOTAL_CUOTAS", cuotas[1]);
                         dht = dht.getFromDMYHMS(c[c.length - 3], "/");
                         data2.update("FECHA_RETIRO", dht.dateYMD);
-                        data2.update("COMPROBANTE",`${dht.dateYMD} P:${cuotas[1]-cuotas[0]}`)
+                        data2.update("COMPROBANTE", `${dht.dateYMD} P:${cuotas[1] - cuotas[0]}`)
                     }
                 }
                 else {
@@ -568,7 +574,7 @@ export class Service {
                     data2.update("CUOTA", 1);
                     data2.update("TOTAL_CUOTAS", 1);
                     data2.update("FECHA_RETIRO", "");
-                    data2.update("COMPROBANTE","")
+                    data2.update("COMPROBANTE", "")
                 }
                 data2.update("DEBITO", this.getMoneyValue(c[c.length - 1]));
                 let concepto = "";
@@ -779,6 +785,11 @@ export class Service {
     }
 
     report(data: KVPCollection): GSResponse {
+        let master = [[]];
+        let detail = [[]];
+        let masters;
+
+
         SysLog.log(0, "", "service.ts report() data received", JSON.stringify(data));
         let fpi = new FileProcessItem();
 
@@ -790,42 +801,42 @@ export class Service {
 
         recType = Data.get("REC_FILTER");
 
-        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
-        if (rt.length > 0)
-            fileName = rt[0][5].trim() + "_Data";
-        else
-            fileName = `${recType.trim()}_Data`;
-
-        SysLog.log(0,"","service.ts report() fileName",fileName);
-        
-
         this.dtDesde = new DateHelper();
         this.dtDesde = this.dtDesde.getFromYMDHMS(Data.get("FECHA_DESDE"));
 
         this.dtHasta = new DateHelper();
         this.dtHasta = this.dtHasta.getFromYMDHMS(Data.get("FECHA_HASTA"));
 
-        let master;
-        let detail;
 
-        let ss = Utils.openSpreadSheet(fileName, this.folder);
-        if (ss != null) {
-            let sheet = ss.getSheetByName("Master");
-   
-            //todo: temproary
-            if ( recType == "ANDA")
-                master = Utils.getData(ss, "Master","S").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
-            else
-                master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
-            response.detail = [[]];
+        for (var i = this.dtDesde.Y; i <= this.dtHasta.Y; i++) {
+            fileName = `${recType}_${i}_Data`;
+            let ss = Utils.openSpreadSheet(fileName, this.folder);
+            if (ss != null) {
+                let sheet = ss.getSheetByName("Master");
 
-            response.master = master;
-            response.formId = recType;
-            response.action = "REPORT";
+                //todo: temproary
+                if (recType == "ANDA")
+                    master = Utils.getData(ss, "Master", "S").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+                else
+                    master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+                if (master.length > 0)
 
-            let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
-            response.addHtml("filtros", filtrosHtml);
+                if ( masters == null)
+                    masters = master;
+                else 
+                    masters = masters.concat(master);
+            }
+            else SysLog.log(0,"file not found",fileName);
+
         }
+        response.detail = [[]];
+        response.master = masters;
+        response.formId = recType;
+        response.action = "REPORT";
+
+        let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
+        response.addHtml("filtros", filtrosHtml);
+
         SysLog.log(0, "response", "report", JSON.stringify(response));
         return response;
     }

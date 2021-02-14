@@ -7,6 +7,13 @@ import { SysLog } from "./SysLog";
 import { Utils } from "./Utils";
 
 
+function testImportBatchbrou()
+{
+    let sv = new Service();
+    let result = sv.importBatchBROU("BROU","https://docs.google.com/spreadsheets/d/1ESU3V99RHg8Ol_Z3FWvRGYhXKvdAt1f8TtUtJv0OOws/edit");
+}
+
+
 function testReport()
 {
     let data = new KVPCollection();
