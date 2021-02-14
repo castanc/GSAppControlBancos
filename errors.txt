@@ -1,2 +1,28 @@
-backend/service.ts(788,46): error TS1127: Invalid character.
-backend/service.ts(791,26): error TS1011: An element access expression should take an argument.
+backend/service.ts(5,27): error TS2792: Cannot find module '../models/GlucLevel'. Did you mean to set the 'moduleResolution' option to 'node', or to add aliases to the 'paths' option?
+backend/service.ts(71,63): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+backend/service.ts(80,66): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(82,36): error TS2493: Tuple type '[]' of length '0' has no element at index '4'.
+backend/service.ts(91,68): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(92,22): error TS2493: Tuple type '[]' of length '0' has no element at index '4'.
+backend/service.ts(93,27): error TS2493: Tuple type '[]' of length '0' has no element at index '1'.
+backend/service.ts(105,68): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(106,27): error TS2493: Tuple type '[]' of length '0' has no element at index '1'.
+backend/service.ts(294,72): error TS2493: Tuple type '[]' of length '0' has no element at index '2'.
+backend/service.ts(475,72): error TS2493: Tuple type '[]' of length '0' has no element at index '2'.
+backend/service.ts(821,75): error TS2532: Object is possibly 'undefined'.
+backend/service.ts(821,77): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(821,104): error TS2532: Object is possibly 'undefined'.
+backend/service.ts(821,106): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(823,70): error TS2532: Object is possibly 'undefined'.
+backend/service.ts(823,72): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/service.ts(823,99): error TS2532: Object is possibly 'undefined'.
+backend/service.ts(823,101): error TS2493: Tuple type '[]' of length '0' has no element at index '3'.
+backend/Utils.ts(246,20): error TS2304: Cannot find name 'FileIterator'.
+backend/Utils.ts(258,20): error TS2304: Cannot find name 'FileIterator'.
+backend/Utils.ts(622,18): error TS2339: Property 'moveTo' does not exist on type 'File'.
+backend/Utils.ts(724,52): error TS2339: Property 'PLAIN_TEXT' does not exist on type '{ new (): MimeType; prototype: MimeType; }'.
+models/RecTypeInfo.ts(12,26): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+models/RecTypeInfo.ts(13,26): error TS2493: Tuple type '[]' of length '0' has no element at index '1'.
+models/RecTypeInfo.ts(14,26): error TS2493: Tuple type '[]' of length '0' has no element at index '4'.
+models/RecTypeInfo.ts(15,31): error TS2493: Tuple type '[]' of length '0' has no element at index '5'.
+../../node_modules/@types/google-apps-script/google-apps-script.base.d.ts(512,13): error TS2403: Subsequent variable declarations must have the same type.  Variable 'console' must be of type 'Console', but here has type 'console'.

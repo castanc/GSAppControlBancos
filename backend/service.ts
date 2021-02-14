@@ -2,7 +2,6 @@ import { DateHelper } from "../models/DateHelper";
 import { DomainResponse } from "../models/DomainResponse";
 import { FileInfo } from "../Models/FileInfo";
 import { FileProcessItem } from "../models/FileProcessItem";
-import { GlucLevel } from "../models/GlucLevel";
 import { GSResponse } from "../Models/GSResponse";
 import { KVPCollection } from "../models/KVPCollection";
 import { NamedArray } from "../models/NamedAray";
@@ -504,28 +503,6 @@ export class Service {
         indexComprobante = data2.getIndex("COMPROBANTE");
 
 
-        if (lastYear != dht.Y) {
-            lastYear = dht.Y;
-            fileName = `${recType}_${lastYear}_Data`;
-            ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
-            sheet = ss.getActiveSheet();
-            range = sheet.getDataRange();
-            lastColumn = range.getLastColumn();
-            lastRow = range.getLastRow() + 1;
-            //grid = range.getValues();
-
-            indexFileName = `${fileName}.index`;
-            if (lastRow <= 2) {
-                indexText = "";
-                Utils.writeTextFile(indexFileName, indexText, this.folder);
-            }
-            else {
-                if (indexText.length > 0) {
-                    Utils.writeTextFile(indexFileName, indexText, this.folder);
-                }
-                indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
-            }
-        }
 
 
         let id = this.getId("Parameters");
@@ -538,6 +515,30 @@ export class Service {
                 dht = dht.getFromDMYHMS(c[0], ".");
                 if (dht.dt == null || dht.invalidDate)
                     continue;
+
+                    if (lastYear != dht.Y) {
+                        lastYear = dht.Y;
+                        fileName = `${recType}_${lastYear}_Data`;
+                        ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
+                        sheet = ss.getActiveSheet();
+                        range = sheet.getDataRange();
+                        lastColumn = range.getLastColumn();
+                        lastRow = range.getLastRow() + 1;
+                        //grid = range.getValues();
+            
+                        indexFileName = `${fileName}.index`;
+                        if (lastRow <= 2) {
+                            indexText = "";
+                            Utils.writeTextFile(indexFileName, indexText, this.folder);
+                        }
+                        else {
+                            if (indexText.length > 0) {
+                                Utils.writeTextFile(indexFileName, indexText, this.folder);
+                            }
+                            indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
+                        }
+                    }
+            
 
                 dt = dht.dt;
 
@@ -566,7 +567,7 @@ export class Service {
                         data2.update("TOTAL_CUOTAS", cuotas[1]);
                         dht = dht.getFromDMYHMS(c[c.length - 3], "/");
                         data2.update("FECHA_RETIRO", dht.dateYMD);
-                        data2.update("COMPROBANTE", `${dht.dateYMD} P:${cuotas[1] - cuotas[0]}`)
+                        data2.update("COMPROBANTE", `${dht.dateYMD.substr(2)} ${cuotas[1] - cuotas[0]}`)
                     }
                 }
                 else {

@@ -761,8 +761,8 @@
                 }
 
                 concepto = master2[i][13];
-                if (concepto.length > 33)
-                    concepto = `${concepto.substr(0, 30)}...`;
+                if (concepto.length > 20)
+                    concepto = `${concepto.substr(0, 17)}...`;
 
                 isDebit = false;
                 if (master2[i][15].toString() == "") {
@@ -782,27 +782,29 @@
 
                 if (lastValue == null)
                     lastValue = master2[i][breakCol];
-                if (lastValue == 0) {
+                if (lastMonth == 0) {
                     lastMonth = master2[i][7];
                 }
                 if (lastYear == 0) {
                     lastYear = master2[i][6];
-                    row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
+                    if ( breakRows > 1 )
+                        row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
                 }
                 if (lastValue != master2[i][breakCol]) {
-                    if (breakRows > 1 && sortCol < 13) {
+                    if (breakRows > 1 && sortCol < 14) {
 
                         if (breakCol == 7) {
                             row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]} ${lastYear}`, totalDeb,
                                 totalStyle, getLineStyle(i + 1, true, diffBG))}`
-                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]} ${lastYear}`, totalCredYear,
+                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]} ${lastYear}`, totalCred,
                                 totalStyle, getLineStyle(i + 2, false, diffBG), true)}`;
 
                         }
                         else {
                             row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, totalStyle, getLineStyle(i + 1, true, diffBG))}`
-                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG), true)}`;
+                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCred, totalStyle, getLineStyle(i + 2, false, diffBG), true)}`;
                         }
+                        breakRows = 0;
                     }
                     lastValue = master2[i][breakCol];
                     totalCred = 0;
@@ -813,7 +815,7 @@
 
                 if (lastYear != master2[i][6] && sortCol < 13) {
                     yearsInReport++;
-                    if (sortCol < 14) {
+                    if (sortCol < 13) {
                         row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle, getLineStyle(i + 1, true, diffBG))}`;
                         row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle, getLineStyle(i + 2, false, diffBG))}`;
                     }
@@ -839,9 +841,13 @@
                     totalCredYear += value;
                 }
 
+                let fechaStr = `${days[master2[i][9] + 1].substr(0, 2)} ${master2[i][8]}`;
+                if (sortCol > 12 )
+                    fechaStr = `${master2[i][6].toString().substr(2,2)}-${master2[i][7]}-${master2[i][8]}`;
+
                 let r = `<div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
                     <div class="col-md-2" ${styleTag}>
-                        ${days[master2[i][9] + 1].substr(0, 2)} ${master2[i][8]}
+                        ${fechaStr}
                     </div>
                     <div class="col-md-5 fit-text" ${styleTag}>
                     ${concepto}
@@ -1343,6 +1349,8 @@
             hideDiv("DIVfechaHora");
             hideDiv("DIVrecType")
             showDiv("reportArea");
+            showDiv("filtros");
+            hideDiv("reportFilter");
             renderMaster();
             disableButtons(false);
         }
@@ -1560,6 +1568,8 @@
         hideDiv("reportMenu");
         hideDiv("adminMenu");
         hideDiv("reportArea");
+        hideDiv("filtros");
+        hideDiv("reportFilter");
         editMode = false;
         writeInnerHtml("title", title);
         formChanged = false;
@@ -1592,8 +1602,8 @@
         htmlRecType = getSelect("RT", arr, 3, 4, "Tipo Registro", "", true);
         writeInnerHtml("REC_TYPE", htmlRecType);
 
-        htmlRecType = getSelect("RT2", arr, 3, 4, "Tipo Registro", "", true);
-        writeInnerHtml("tipoRegistro", htmlRecType);
+        let htmlRecType2 = getSelect("RT2", arr, 3, 4, "Tipo Registro", "", true);
+        writeInnerHtml("tipoRegistro", htmlRecType2);
 
 
         newRecord();
