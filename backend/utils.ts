@@ -502,18 +502,25 @@ export class Utils {
         return sheet.getDataRange();
     }
 
-    static getData(ss, sheetName: string = "", sort = null ): [][] {
+
+
+    static getData(ss, sheetName: string = "", stringCols: string = "" ): [][] {
         let sheet;
         if (sheetName == "")
             sheet = ss.getActiveSheet();
         else
             sheet = ss.getSheetByName(sheetName);
 
-        var rangeData = sheet.getDataRange();
-        if ( sort != null )
+        if(stringCols != "")
         {
-            rangeData.sort(sort);
+            let cols = stringCols.split(",");
+            cols.forEach(c=>{
+                var column = sheet.getRange(`${c}1:${c}`);
+                column.setNumberFormat("@");
+            })
         }
+
+        var rangeData = sheet.getDataRange();
         //var lastColumn = rangeData.getLastColumn();
         //var lastRow = rangeData.getLastRow();
         let grid = rangeData.getValues();

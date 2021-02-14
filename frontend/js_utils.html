@@ -5,6 +5,15 @@
         return value.toString();
     }
 
+    function fillLeft(value, maxLen) {
+        let result = `0000000000000000000000000000${value}`;
+        if ( maxLen  > result.length )
+            maxLen = result.length;
+
+        return result.substr(result.length - maxLen);
+    }
+    
+
     function writeInnerHtml(controlId, html) {
         let control = document.getElementById(controlId);
         if (control != undefined) {

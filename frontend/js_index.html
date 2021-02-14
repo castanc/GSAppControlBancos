@@ -30,6 +30,10 @@
     let breakCol = 7;
     let breakValue = 0;
     let breakRows = 0;
+    let lastYear = 0;
+    let totalDebYear = 0;
+    let totalCredYear = 0;
+    let yearsInReport = 0;
 
     let sortCol = 5;
     let isDebit = false;
@@ -46,7 +50,7 @@
     ]
 
     let selectedDOW = dow;
-    let months = "Todos,Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic".split(",");
+    let months = "Todos,Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre".split(",");
 
 
     let recTypes = "";
@@ -279,7 +283,7 @@
     function sortFunction(a, b) {
         let value = 0;
         let value1 = 0;
-        if (sortCol > 14) {
+        if (sortCol > 13) {
             if (a[15] == "") {
                 value = a[16];
                 value1 = b[16];
@@ -289,7 +293,14 @@
                 value1 = a[15];
             }
         }
-        else {
+        else if ( sortCol == 13 )
+        {
+            value = a[sortCol] + fillLeft(a[5]);
+            value1 = b[sortCol] + fillLeft(b[5]);
+
+        }
+        else
+        {
             value = a[sortCol];
             value1 = b[sortCol];
         }
@@ -526,6 +537,8 @@
         hideDiv("spinner");
     }
 
+
+
     function sortConcepto() {
         sortCol = 13;
         breakCol = 13;
@@ -534,6 +547,18 @@
         renderMaster();
         hideDiv("spinner");
     }
+
+    function sortFechaRetiro() {
+        sortCol = 15;
+        breakCol = 15;
+        showDiv("spinner");
+        sortDescending = !sortDescending;
+        renderMaster();
+        hideDiv("spinner");
+    }
+
+
+
 
     function sortComprobante() {
         sortCol = 14;
@@ -597,6 +622,64 @@
         newRecord();
     }
 
+    function getYearRow(year, styleTag, rowBefore = true) {
+        let line = "";
+        if (rowBefore)
+            line = `<div class="row"><div class="col-md-12"></div></div>`;
+        line = `${line} <div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        Año ${year}
+                        </div>
+                        <div class="col-md-2 text-right" style="color:red;">
+                        </div>
+                        </div>`;
+        return line;
+
+    }
+
+    function getTotalRow(title, value, styleTag, addLine = false) {
+        let line = `<div class="row">
+                        <div class="col-md-2" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                        ${title}
+                        </div>
+                        <div class="col-md-2 text-right" style="color:red;">
+                        ${formatMoney(value)}
+                        </div>
+                        </div>`;
+        if (addLine)
+            line = `${line}<div class="row"><div class="col-md-12"></div></div>`;
+        return line;
+    }
+
+    function getHeader(fontSize) {
+        return `<div style="${fontSize}">
+        <hr>
+        <div class="row">
+        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
+        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
+        <div class="col-md-3">Compr. <i class="fas fa-sort fa-2x" onclick="sortComprobante()"></i></div>
+        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
+        </div>
+        `;
+    }
+
+    function getHeaderAnda(fontSize) {
+        return `<div style="${fontSize}">
+        <hr>
+        <div class="row">
+        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
+        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
+        <div class="col-md-3">Origen.<i class="fas fa-sort fa-2x" onclick="sortFechaRetiro()"></i></div>
+        <div class="col-md-3">Pend. </div>
+        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
+        </div>
+        `;
+    }
+
     function renderMaster() {
         let recType = "";
         let classText = "";
@@ -612,34 +695,18 @@
         let diffBG = "";
         let concepto = "";
 
-        if (master == null) {
-            return;
-        }
-        if (master.length < 1)
-            return;
-
         showDiv("content");
         hideDiv("DIVrecType");
         hideDiv("SELECT_RT");
 
-        let row = `<div style="${fontSize}">
-        <hr>
-        <div class="row">
-        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
-        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
-        <div class="col-md-3">Compr. <i class="fas fa-sort fa-2x" onclick="sortComprobante()"></i></div>
-        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
-        </div>
-        `;
+        if (master == null) return;
+
+        let row = getHeader(fontSize);
 
         if (master.length > 0) {
 
             let master2;
             master2 = sortArray(master, 3);
-
-
-
-            let divRecords = "";
             diffBG = "background-color:gainsboro;";
             totalDeb = 0;
             totalCred = 0;
@@ -659,8 +726,8 @@
                     styleTag = `style="${diffBG}"`;
 
                 concepto = master2[i][13];
-                if (concepto.length > 23)
-                    concepto = `${concepto.substr(0, 20)}...`;
+                if (concepto.length > 33)
+                    concepto = `${concepto.substr(0, 30)}...`;
 
                 if (master2[i][15].toString() == "") {
                     value = master2[i][16];
@@ -678,49 +745,22 @@
 
                 if (lastValue == null)
                     lastValue = master2[i][breakCol];
-
-                //todo: get breakValue according to sortCol
-
-                divRecords = "";
-
-                // hora = "00:00";
-                // if (isDate(master2[i][12])) {
-                //     hora = master2[i][12].toLocaleTimeString('es-UY')
-                // }
-
-                //todo if breakRows == 1, do not print totals
-
+                if (lastYear == 0) {
+                    lastYear = master2[i][6];
+                    row = `${row}${getYearRow(lastYear)}`;
+                }
                 if (lastValue != master2[i][breakCol]) {
-                    if (breakRows > 1 && sortCol < 14 ) {
-                        if (totalDeb > 0) {
-                            row = `${row}
-                        <div class="row">
-                        <div class="col-md-2" ${styleTag}>
-                        </div>
-                        <div class="col-md-8" ${styleTag}>
-                        Total Débitos
-                        </div>
-                        <div class="col-md-2 text-right" style="color:red;">
-                        ${formatMoney(totalDeb)}
-                        </div>
-                        </div>`;
+                    if (breakRows > 1 && sortCol < 14) {
+                        if (breakCol == 7) {
+                            row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]}/${lastYear}`, totalDeb, styleTag)}`
+                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]}/${lastYear}`, totalCredYear, styleTag, true)}`;
+
                         }
-                        if (totalCred > 0) {
-                            row = `${row}
-                        <div class="row">
-                        <div class="col-md-2" ${styleTag}>
-                        </div>
-                        <div class="col-md-8" ${styleTag}>
-                        Total Créditos
-                        </div>
-                        <div class="col-md-2 text-right">
-                        ${formatMoney(totalCred)}
-                        </div>
-                        </div>`;
+                        else {
+                            row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, styleTag)}`
+                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, styleTag, true)}`;
                         }
                     }
-                    if (totalDeb + totalCred > 0)
-                            row = `${row}<div class="row"><div class="col-md-12"></div></div>`;
                     lastValue = master2[i][breakCol];
                     totalCred = 0;
                     totalDeb = 0;
@@ -728,21 +768,32 @@
                 }
                 else breakRows++;
 
-
+                if (lastYear != master2[i][6] && sortCol < 14) {
+                    yearsInReport++;
+                    if (sortCol < 14) {
+                        row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, styleTag)}`;
+                        row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, styleTag)}`;
+                    }
+                    lastYear = master2[i][6];
+                    totalDebYear = 0;
+                    totalCredYear = 0;
+                    row = `${row}${getYearRow(lastYear)}`;
+                }
                 if (isDebit) {
                     totalDeb += value;
                     granTotalDeb += value;
+                    totalDebYear += value;
+                    totalCredYear += value;
                 }
                 else {
                     totalCred += value;
                     granTotalCred += value;
                 }
 
-                row = `${row}
-                <div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
+                let r = `<div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
                     <div class="col-md-2" ${styleTag}>
                         ${days[master2[i][9] + 1].substr(0, 2)} 
-                        ${months[master2[i][7]]}-${master2[i][8]}
+                        ${months[master2[i][7]].substr(0, 3)}-${master2[i][8]}
                     </div>
                     <div class="col-md-5 fit-text" ${styleTag}>
                     ${concepto}
@@ -756,74 +807,29 @@
                 </div>
                 <div id="detail${master2[i][1]}" class="row">
                 </div>`;
+
+                row = `${row}${r}`;
             }
         }
         row = `${row}</div>`;
+        if (sortCol < 14) {
+            row = `${row}${getTotalRow("Total Débitos", totalDebYear), styleTag}`;
+            row = `${row}${getTotalRow("Total Créditos", totalCredYear, styleTag, true)}`;
+        }
 
-        if (totalDeb > 0) {
-            row = `${row}
-                        <div class="row">
-                        <div class="col-md-2" ${styleTag}>
-                        </div>
-                        <div class="col-md-8" ${styleTag}>
-                        Total Débitos
-                        </div>
-                        <div class="col-md-2 text-right" style="color:red;">
-                        ${formatMoney(totalDeb)}
-                        </div>
-                        </div>`;
+        if (yearsInReport > 1 && sortCol < 14) {
+            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, styleTag)}`;
+            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, styleTag)}`;
         }
-        if (totalCred > 0) {
-            row = `${row}
-                        <div class="row">
-                        <div class="col-md-2" ${styleTag}>
-                        </div>
-                        <div class="col-md-8" ${styleTag}>
-                        Total Créditos
-                        </div>
-                        <div class="col-md-2 text-right">
-                        ${formatMoney(totalCred)}
-                        </div>
-                        </div>`;
-        }
-        row = `${row}<div class="row"><div class="col-md-12"></div></div>`;
 
-        if (breakCol < 14) {
-            if (granTotalDeb > 0) {
-                row = `${row}
-            <div class="row">
-            <div class="col-md-2" ${styleTag}>
-            </div>
-            <div class="col-md-8" ${styleTag}>
-            Gran Total Débitos
-            </div>
-            <div class="col-md-2 text-right" style="color:red;">
-            ${formatMoney(granTotalDeb)}
-            </div>
-            </div>`;
-            }
-            if (granTotalCred > 0) {
-                row = `${row}
-            <div class="row">
-            <div class="col-md-2" ${styleTag}>
-            </div>
-            <div class="col-md-8" ${styleTag}>
-            Gran Total Créditos
-            </div>
-            <div class="col-md-2 text-right">
-            ${formatMoney(granTotalCred)}
-            </div>
-            </div>`;
-            }
-        }
+
+        row = `${row}${getTotalRow("Gran Total Débitos", granTotalDeb, styleTag)}`;
+        row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, styleTag)}`;
 
         writeInnerHtml("btnReport", "Reporte");
         writeInnerHtml("report", row);
         setFilterData();
     }
-
-
-
 
 
     function buildFiltros() {
@@ -1047,7 +1053,7 @@
     function initializeFormRecType() {
         records = [];
         if (recType == "BROU") {
-            requiredFields = "REC_TYPE,FECHA,HORA,EXTRACTO_BROU";
+            requiredFields = "REC_TYPE,FECHA,HORA,URL";
             initializeData(requiredFields);
         }
         else if (recType == "EVENT") {
@@ -1124,7 +1130,16 @@
                 msg = response.messages[0];
             }
             showMessage(msg);
-            newRecord();
+            if( response.action == "REPORT")
+            {
+                master = response.master;
+                detail = response.detail;
+                if ( response.formId=="BROU")
+                    renderMaster();
+                if ( response.formId=="ANDA")
+                    renderAnda();
+            }
+            else newRecord();
         }
         else {
             let row = `<tr><td>Server Error</td><td>${response.result}</td></tr>`;
@@ -1149,6 +1164,7 @@
     }
 
     function loadReport() {
+        console.log("loadReport()");
         showDiv("spinner");
         subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
         disableButtons(true);
@@ -1160,7 +1176,7 @@
 
     function processResponseGetFileInfo(json) {
         processResponse(json);
-        Data.update("EXTRACTO_BROU", lastUrl);
+        Data.update("URL", lastUrl);
         hideDiv("spinner");
         disableButtons(false);
     }
@@ -1204,13 +1220,8 @@
             showDiv("DIVfechaHora");
             showDiv("DIVrecType");
 
-
-
             Data.update("FECHA", getValue("FECHA"));
             Data.update("HORA", getValue("HORA"));
-
-            //if ( recType == "BROU")
-            //    Data.update("EXTRACTO_BROU",getValue("EXTRACTO_BROU"));
 
             console.log("processForm() Data", Data);
             newRecord();
@@ -1370,27 +1381,10 @@
         writeInnerHtml("title", "Reporte por Rango de Fechas");
 
         html = "";
-        html = localStorage.getItem("content_REP");
+        google.script.run.withFailureHandler(failureHandler)
+            .withSuccessHandler(processResponseLoadReportForm)
+            .getForm("", "report");
 
-        if (html == null || html == undefined)
-            html = "";
-
-
-        //todo: if entry is not found is returning as if it exists
-        if (html.length == 0 || overrideLocalStorage) {
-            overrideLocalStorage = false;
-            google.script.run.withFailureHandler(failureHandler)
-                .withSuccessHandler(processResponseLoadReportForm)
-                .getForm("", "report");
-        }
-        else {
-            writeInnerHtml("content", html);
-            setReportDates();
-            setFilterData();
-            hideDiv("mainContent");
-            showDiv("reportArea");
-
-        }
         hideDiv("spinner");
 
     }
@@ -1450,12 +1444,13 @@
     }
 
     function onchange_RT2(e) {
+        console.log("onchange_RT2",e);
         Data.update("REC_FILTER", e);
         recFilter = e;
-        if (recFilter == "BROU") {
-            let htmlConcepto = getSelect("CO", Items.arr.filter(x => x[2] == `C${recType}`), 3, 4, "Concepto", "", true);
-            writeInnerHtml("SELECT_CONCEPTO", htmlConcepto);
-        }
+        // if (recFilter == "BROU") {
+        //     let htmlConcepto = getSelect("CO", Items.arr.filter(x => x[2] == `C${recType}`), 3, 4, "Concepto", "", true);
+        //     writeInnerHtml("SELECT_CONCEPTO", htmlConcepto);
+        // }
 
 
     }

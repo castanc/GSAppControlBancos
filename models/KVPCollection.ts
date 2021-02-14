@@ -89,19 +89,18 @@ export class KVPCollection {
         return cols;
     }
 
-    getColValues():string{
+    getColValues(sep=","):string{
 
         let cols = "";
         for(var i=0; i< this.arr.length; i++)
         {
-            cols = `${cols}${this.arr[i].value},`;
+            cols = `${cols}${this.arr[i].value}${sep}`;
         }
-        let index = cols.lastIndexOf(",");
+        let index = cols.lastIndexOf(sep);
         if ( index >0 )
             cols = cols.substring(0,index);
         return cols;
     }
-
 
 
 }

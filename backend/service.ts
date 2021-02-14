@@ -257,10 +257,9 @@ export class Service {
         return response;
     }
 
-    getMoneyValue(val)
-    {
-        let text = Utils.replace(val,".","");
-        text = Utils.replace(text,",",".");
+    getMoneyValue(val) {
+        let text = Utils.replace(val, ".", "");
+        text = Utils.replace(text, ",", ".");
         return text;
     }
 
@@ -316,9 +315,16 @@ export class Service {
 
         let data2 = new KVPCollection();
         data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,FULL_MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA");
+
         indexComprobante = data2.getIndex("COMPROBANTE");
 
-        fileName = G.FileName;
+        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
+        SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(rt));
+        if (rt.length > 0)
+            fileName = `${rt[0][5]}_Data`;
+        else
+            fileName = `${recType}_Data`;
+
         ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
         sheet = ss.getActiveSheet();
 
@@ -344,7 +350,7 @@ export class Service {
 
 
                 //todo: this doesnt work
-                
+
                 if (dht.dt == null || dht.invalidDate)
                     continue;
 
@@ -420,7 +426,7 @@ export class Service {
                 fpi.failRows++;
                 fpi.failRow = i;
                 fpi.error = ex.message;
-                SysLog.logException(ex,"importBatchBROU()",JSON.stringify(c));
+                SysLog.logException(ex, "importBatchBROU()", JSON.stringify(c));
                 //break;
                 throw ex;
             }
@@ -435,6 +441,158 @@ export class Service {
         return fpi;
     }
 
+
+    importBatchANDA(recType, url): FileProcessItem {
+
+        let fileName = "";
+        let lastRow = 2;
+        let ss;
+        let sheet;
+        let range;
+        let lastColumn = 0;
+        let grid;
+        let value;
+        let v;
+        let i = 0;
+        let ssSource;
+        let gridSource;
+        let fpi = new FileProcessItem();
+        let c;
+        let startRow = 0;
+        let dt: Date = new Date();
+        let dht = new DateHelper();
+        let indexComprobante = 0;
+        let valor = "";
+        let oldFormatDate = new Date(2019, 12, 31);
+
+
+
+        this.conceptos = Utils.getData(this.db, "Items").filter(x => x[2] == recType);
+
+        ssSource = Utils.openSpreadSheet(url);
+        if (ssSource == null)
+            return fpi;
+
+        SysLog.log(0, "importBatchANDA()", `recRType: ${recType} url:${url}`);
+
+        let ssFile = Utils.getFileByName(ssSource.getName());
+        let fi = new FileInfo();
+        fi.setFileInfo(ssFile);
+        fpi.setFileInfo(fi);
+
+        sheet = ssSource.getActiveSheet();
+        //set format as string
+        var column = sheet.getRange("A1:A");
+        column.setNumberFormat("@");
+
+        var column = sheet.getRange("C1:C");
+        column.setNumberFormat("@");
+
+        var rangeData = sheet.getDataRange();
+        lastColumn = rangeData.getLastColumn();
+        fpi.totalRows = rangeData.getLastRow();
+        gridSource = rangeData.getValues();
+
+
+        let data2 = new KVPCollection();
+        data2.initialize("ROW,ID,INACTIVE,DAYS,MINUTES,FULL_MINUTES,Y,M,D,DOW,REC_TYPE,FECHA,HORA,CONCEPTO,COMPROBANTE,DEBITO,CREDITO,MONEDA,FECHA_RETIRO,CUOTA,TOTAL_CUOTAS,TIPOOP");
+        indexComprobante = data2.getIndex("COMPROBANTE");
+
+        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
+        SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(rt));
+        if (rt.length > 0)
+            fileName = `${rt[0][5]}_Data`;
+        else
+            fileName = `${recType}_Data`;
+
+        ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
+        sheet = ss.getActiveSheet();
+
+
+        range = sheet.getDataRange();
+        lastColumn = range.getLastColumn();
+        lastRow = range.getLastRow() + 1;
+        grid = range.getValues();
+
+
+        let id = this.getId("Parameters");
+
+        SysLog.log(0, "grid", "importBatchANDA()", `grid length: ${gridSource.length} lastColumn:${lastColumn}`);
+        let startCuotaSocial = false;
+        for (i = 1; i < gridSource.length; i++) {
+            try {
+                c = gridSource[i];
+                dht = dht.getFromDMYHMS(c[0], ".");
+                if (dht.dt == null || dht.invalidDate)
+                    continue;
+
+                dt = dht.dt;
+
+                data2.update("D", dht.D.toString());
+                data2.update("M", dht.M.toString());
+                data2.update("Y", dht.Y.toString());
+                data2.update("DOW", dht.DOW.toString());
+                data2.update("ID", id.toString());
+                data2.update("ROW", lastRow.toString());
+                data2.update("DAYS", dht.days.toString());
+                data2.update("MINUTES", dht.minutes.toString());
+                data2.update("FULL_MINUTES", dht.fullMinutes.toString());
+                data2.update("FECHA", dht.dateYMD);
+                data2.update("HORA", dht.hour);
+                data2.update("REC_TYPE", recType);
+                data2.update("TIPOOP", "D");
+
+                startCuotaSocial = (c[2].indexOf("CUOTA SOCIAL") >= 0;
+                c = c[2].split(" ");
+                SysLog.log(0, "", "service.ts importBatchANDA()", JSON.stringify(c));
+
+                if (!startCuotaSocial) {
+                    let cuotas = c[c.length - 2].split("/");
+                    if (cuotas.length > 1) {
+                        data2.update("CUOTA", cuotas[0]);
+                        data2.update("TOTAL_CUOTAS", cuotas[1]);
+                        dht = dht.getFromDMYHMS(c[c.length - 3], "/");
+                        data2.update("FECHA_RETIRO", dht.dateYMD);
+                    }
+                }
+                else {
+                    SysLog.log(0, "", JSON.stringify(data2));
+                    data2.update("CUOTA", 1);
+                    data2.update("TOTAL_CUOTAS", 1);
+                    data2.update("FECHA_RETIRO", "");
+                }
+                data2.update("DEBITO", this.getMoneyValue(c[c.length - 1]));
+                let concepto = "";
+                for (var j = 0; j < 4; j++) {
+                    concepto = `${concepto}${c[j]} `;
+                }
+
+                data2.update("CONCEPTO", concepto.trim());
+                data2.update("REC_TYPE", recType);
+
+                v = data2.getColValues("\t").split("\t");
+                sheet.appendRow(v);
+                id++;
+                lastRow++;
+            }
+            catch (ex) {
+                fpi.failRows++;
+                fpi.failRow = i;
+                fpi.error = ex.message;
+                SysLog.logException(ex, "importBatchANDA()", JSON.stringify(c));
+                //break;
+                throw ex;
+            }
+
+        }
+
+        id--;
+        this.updateId("Parameters", id);
+        SysLog.log(0, "load process finished");
+
+        Logger.log("RETURNING...");
+        return fpi;
+    }
 
 
     renderBatchResults(fpi: FileProcessItem): string {
@@ -509,7 +667,8 @@ export class Service {
 
     processForm(Data: KVPCollection, records: Array<RecordItemBase>, colSep = "\t", lineSep = "\n"): GSResponse {
         this.getLogLevel("Parameters");
-        SysLog.log(0, "data received", "processForm()", JSON.stringify(Data));
+        SysLog.log(0, "data received", "service.ts processForm()", JSON.stringify(Data));
+
 
 
         let response = new GSResponse();
@@ -519,15 +678,20 @@ export class Service {
 
         let recType = data2.get("REC_TYPE");
         let fpi = new FileProcessItem();
-        let url = "";
+        let url = data2.get("URL");
 
+        SysLog.log(0, "service.ts ProcessForm()", `recType:${recType} url:${url}`);
 
         if (recType == "BROU") {
-            response.fpi = this.importBatchBROU(recType, data2.get("EXTRACTO_BROU"));
+            response.fpi = this.importBatchBROU(recType, url);
             return response;
         }
         else if (recType == "REP") {
             response = this.report(Data);
+            return response;
+        }
+        else if (recType == "ANDA") {
+            response.fpi = this.importBatchANDA(recType, url);
             return response;
         }
 
@@ -606,12 +770,25 @@ export class Service {
     }
 
     report(data: KVPCollection): GSResponse {
+        SysLog.log(0, "", "service.ts report() data received", JSON.stringify(data));
+        let fpi = new FileProcessItem();
+
         let response = new GSResponse();
         let Data = new KVPCollection();
-        let fileName = "BROUCesar";
+        let fileName = "";
+        let recType = "";
         Data.arr = data.arr;
 
-        SysLog.log(0, "data received", "service.ts report()", JSON.stringify(Data));
+        recType = Data.get("REC_FILTER");
+
+        let rt = Utils.getData(this.db, "Items").filter(x => x[5] == recType);
+        if (rt.length > 0)
+            fileName = rt[0][5].trim() + "_Data";
+        else
+            fileName = `${recType.trim()}_Data`;
+
+        SysLog.log(0,"","service.ts report() fileName",fileName);
+        
 
         this.dtDesde = new DateHelper();
         this.dtDesde = this.dtDesde.getFromYMDHMS(Data.get("FECHA_DESDE"));
@@ -619,23 +796,29 @@ export class Service {
         this.dtHasta = new DateHelper();
         this.dtHasta = this.dtHasta.getFromYMDHMS(Data.get("FECHA_HASTA"));
 
-        SysLog.log(0, "FECHA DESDE", JSON.stringify(this.dtDesde));
-        SysLog.log(0, "FECHA HASTA", JSON.stringify(this.dtHasta));
-
         let master;
         let detail;
 
         let ss = Utils.openSpreadSheet(fileName, this.folder);
-        master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
-        response.detail = [[]];
+        if (ss != null) {
+            let sheet = ss.getSheetByName("Master");
+   
+            //todo: temproary
+            if ( recType == "ANDA")
+                master = Utils.getData(ss, "Master","S").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+            else
+                master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+            response.detail = [[]];
 
-        response.master = master;
+            response.master = master;
+            response.formId = recType;
+            response.action = "REPORT";
 
-        let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
-        response.addHtml("filtros", filtrosHtml);
-        SysLog.log(0, "response", "report", JSON.stringify(response));
+            let filtrosHtml = HtmlService.createTemplateFromFile(`frontend/reportFilter`).evaluate().getContent();
+            response.addHtml("filtros", filtrosHtml);
+            SysLog.log(0, "response", "report", JSON.stringify(response));
+        }
         return response;
-
     }
 
 

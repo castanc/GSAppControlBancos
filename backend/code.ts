@@ -1,14 +1,27 @@
 import { DateHelper } from "../models/DateHelper";
 import { GSResponse } from "../Models/GSResponse";
+import { KVPCollection } from "../models/KVPCollection";
 import { RecordItem } from "../models/RecordItem";
 import { Service } from "./service";
 import { SysLog } from "./SysLog";
 import { Utils } from "./Utils";
 
-function testImportBatchBROUO()
+
+function testReport()
+{
+    let data = new KVPCollection();
+    data.add("REC_TYPE","REP");
+    data.add("REC_FILTER","ANDA");
+    data.add("FECHA_DESDE","2021-01-01");
+    data.add("FECHA_HASTA","2021-02-13");
+    let sv = new Service();
+    let result = sv.report(data);
+    
+}
+function testImportBatchANDA()
 {
     let sv = new Service();
-    let result = sv.importBatchBROU("BROU","https://docs.google.com/spreadsheets/d/1e85oSbt4QZCfZXAfNc9YAvcmt1BF0-OSQZkyRxnDsCU/edit?usp=drive_web&ouid=105141006247476017889");
+    let result = sv.importBatchANDA("ANDA","https://docs.google.com/spreadsheets/d/14gZJUwIOrXKK4sAsWytAumB0iLm9WUWNk3HmFTnqbVQ/edit#gid=0");
 }
 
 
@@ -157,13 +170,14 @@ function getFileInfo(url)
 }
 
 function report(Data){
+    SysLog.log(0,"","code.ts report()",JSON.stringify(Data));
     let response = new GSResponse();
     try {
         let sv = new Service();
         response = sv.report(Data);
     }
     catch (ex) {
-        handleException(ex, response, "getFileInfo");
+        handleException(ex, response, "report");
     }
     return JSON.stringify(response);        
 }
@@ -210,7 +224,7 @@ function getItems() {
 function handleException(ex, response, method = "", additional = "") {
     response.result = 500;
     response.addError("Exception", ex.message);
-    response.addError("StackTrace", ex.stackTrace);
+    response.addError("StackTrace", ex.stack);
     response.addError("method", method);
     response.addError("additional", additional);
 

@@ -3,6 +3,7 @@ import { KeyValuePair } from "./KeyValuePair";
 
 export class GSResponse {
     result: number = 0;
+    action = "";
     controlId: string = "";
     formId: string = "";
     id: number = -1;
