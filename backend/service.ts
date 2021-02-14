@@ -389,7 +389,11 @@ export class Service {
                     let conc = this.conceptos.filter(x => x[3] == c[1]);
 
                     data2.update("CONCEPTO", c[1]);
-                    data2.update("COMPROBANTE", c[3]);
+                    let comprobante = data2.get("COMPROBANTE");
+                    if ( comprobante.length > 10 )
+                        comprobante = `${comprobante.substr(0,6)} ${comprobante.substr(6,4)} ${comprobante.substr(10)}`;
+                        
+                    data2.update("COMPROBANTE", comprobante);
                     if (conc.length > 0) {
                         if (conc[0][3] == "D")
                             data2.update("DEBITO", this.getMoneyValue(c[2].toString()));
@@ -407,10 +411,10 @@ export class Service {
                     if (c[3].length == 0)
                         data2.update("COMPROBANTE", "");
                     else
-                        data2.update("COMPROBANTE", c[3]);
+                        data2.update("COMPROBANTE", c[2]);
 
-                    data2.update("DEBITO", c[5]);
-                    data2.update("CREDITO", c[6]);
+                    data2.update("DEBITO", c[3]);
+                    data2.update("CREDITO", c[4]);
                 }
 
                 let r = new RecordItemBase();

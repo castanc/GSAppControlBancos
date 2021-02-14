@@ -31,6 +31,7 @@
     let breakValue = 0;
     let breakRows = 0;
     let lastYear = 0;
+    let lastMonth = 0;
     let totalDebYear = 0;
     let totalCredYear = 0;
     let yearsInReport = 0;
@@ -293,14 +294,12 @@
                 value1 = a[15];
             }
         }
-        else if ( sortCol == 13 )
-        {
+        else if (sortCol == 13) {
             value = a[sortCol] + fillLeft(a[5]);
             value1 = b[sortCol] + fillLeft(b[5]);
 
         }
-        else
-        {
+        else {
             value = a[sortCol];
             value1 = b[sortCol];
         }
@@ -624,33 +623,61 @@
 
     function getYearRow(year, styleTag, rowBefore = true) {
         let line = "";
-        if (rowBefore)
-            line = `<div class="row"><div class="col-md-12"></div></div>`;
-        line = `${line} <div class="row">
-                        <div class="col-md-2" ${styleTag}>
+        if (sortCol < 13) {
+            if (rowBefore)
+                line = `<div class="row"><div class="col-md-12"></div></div>`;
+            line = `${line} <div class="row">
+                        <div class="col-md-1" ${styleTag}>
                         </div>
                         <div class="col-md-8" ${styleTag}>
                         Año ${year}
                         </div>
-                        <div class="col-md-2 text-right" style="color:red;">
+                        <div class="col-md-3 text-right" style="color:red;">
                         </div>
                         </div>`;
+        }
         return line;
 
     }
 
-    function getTotalRow(title, value, styleTag, addLine = false) {
-        let line = `<div class="row">
-                        <div class="col-md-2" ${styleTag}></div>
-                        <div class="col-md-8" ${styleTag}>${title}</div>
-                        <div class="col-md-2 text-right" style="color:red;">${formatMoney(value)}</div>
+
+    function getMonthRow(year, month, styleTag, rowBefore = true) {
+        let line = "";
+        if (month == 0)
+            month = 1;
+        if (sortCol < 13) {
+            if (rowBefore)
+                line = `<div class="row"><hr></div>`;
+            line = `${line} <div class="row">
+                        <div class="col-md-1" ${styleTag}>
+                        </div>
+                        <div class="col-md-8" ${styleTag}>
+                         ${months[month]} ${year}
+                        </div>
+                        <div class="col-md-3 text-right" style="color:red;">
+                        </div>
+                        </div>`;
+        }
+        return line;
+
+    }
+
+
+    function getTotalRow(title, value, bgStyle, valueStyle, addLine = false) {
+        if (value > 0) {
+            let line = `<div class="row">
+                        <div class="col-md-1" ${bgStyle}></div>
+                        <div class="col-md-8" ${bgStyle}>${title}</div>
+                        <div class="col-md-3 text-right" ${valueStyle}>${formatMoney(value)}</div>
                     </div>`;
-        if (addLine)
-            line = `${line}
+            if (addLine)
+                line = `${line}
             <div class="row">
                 <hr>
             </div>`;
-        return line;
+            return line;
+        }
+        return "";
     }
 
     function getHeader(fontSize) {
@@ -667,17 +694,15 @@
         `;
     }
 
-    function getHeaderAnda(fontSize) {
-        return `<div style="${fontSize}">
-        <hr>
-        <div class="row">
-        <div class="col-md-2">Fecha  <i class="fas fa-sort fa-2x" onclick="sort()"></i></div>
-        <div class="col-md-5">Concepto  <i class="fas fa-sort fa-2x" onclick="sortConcepto()"></i></div>
-        <div class="col-md-3">Origen.<i class="fas fa-sort fa-2x" onclick="sortFechaRetiro()"></i></div>
-        <div class="col-md-3">Pend. </div>
-        <div class="col-md-2">Valor <i class="fas fa-sort fa-2x" onclick="sortValor()"></i></div>
-        </div>
-        `;
+    function getLineStyle(i, isDebit, diffBG) {
+        let styleTag = "";
+
+        if ( isDebit)
+            styleTag = `style="color:red;"`;
+        else
+            styleTag = `style="color:white;"`;
+
+        return styleTag;
     }
 
     function renderMaster() {
@@ -687,13 +712,18 @@
         let iconColor = "";
         let fontSize = "font-size:26px;";
         let styleTag = `style="${fontSize}"`;
+        let styleTagCredito = "";
+
         let color = "color:white;";
+        let colorDebito = "color:red";
         let style = `style="${fontSize} ${color}"`;
         let dth = new DateHelper();
         let hora = "";
         let styleValor = "";
         let diffBG = "";
         let concepto = "";
+        let totalStyle = "color:blue";
+        
 
         showDiv("content");
         hideDiv("DIVrecType");
@@ -712,6 +742,8 @@
             totalCred = 0;
             granTotalCred = 0;
             granTotalDeb = 0;
+            totalDebYear = 0;
+            totalCredYear = 0;
             for (var i = 0; i < master2.length; i++) {
                 if (master2[i].length < 9)
                     continue;
@@ -721,19 +753,24 @@
 
                 styleValor = "";
                 styleTag = "";
+                styleTagCredito = `style="color:white;"`;
                 let value = 0;
-                if (i % 2 == 0)
+                if (i % 2 == 0) {
                     styleTag = `style="${diffBG}"`;
+                    styleTagCredito = `style="${diffBG}"`;
+                }
 
                 concepto = master2[i][13];
                 if (concepto.length > 33)
                     concepto = `${concepto.substr(0, 30)}...`;
 
+                isDebit = false;
                 if (master2[i][15].toString() == "") {
                     value = master2[i][16];
-                    isDebit = false;
-                    if (i % 2 == 0)
-                        styleValor = `style="${diffBG}"`
+                    if (i % 2 == 0) {
+                        styleValor = `style="${diffBG}; color:white"`
+                        styleTagCredito = `style="${diffBG}; color:white;"`;
+                    }
                 }
                 else {
                     value = master2[i][15];
@@ -745,20 +782,26 @@
 
                 if (lastValue == null)
                     lastValue = master2[i][breakCol];
+                if (lastValue == 0) {
+                    lastMonth = master2[i][7];
+                }
                 if (lastYear == 0) {
                     lastYear = master2[i][6];
-                    row = `${row}${getYearRow(lastYear)}`;
+                    row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
                 }
                 if (lastValue != master2[i][breakCol]) {
                     if (breakRows > 1 && sortCol < 14) {
+                        
                         if (breakCol == 7) {
-                            row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]}/${lastYear}`, totalDeb, styleTag)}`
-                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]}/${lastYear}`, totalCredYear, styleTag, true)}`;
+                            row = `${row}${getTotalRow(`Total Débitos ${months[lastValue]} ${lastYear}`, totalDeb, 
+                                totalStyle,getLineStyle(i+1,true, diffBG))}`
+                            row = `${row}${getTotalRow(`Total Créditos ${months[lastValue]} ${lastYear}`, totalCredYear, 
+                                totalStyle,getLineStyle(i+2,false, diffBG), true)}`;
 
                         }
                         else {
-                            row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, styleTag)}`
-                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, styleTag, true)}`;
+                            row = `${row}${getTotalRow(`Total Débitos ${lastValue}`, totalDeb, totalStyle,getLineStyle(i+1,true, diffBG))}`
+                            row = `${row}${getTotalRow(`Total Créditos ${lastValue}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG), true)}`;
                         }
                     }
                     lastValue = master2[i][breakCol];
@@ -771,29 +814,34 @@
                 if (lastYear != master2[i][6] && sortCol < 14) {
                     yearsInReport++;
                     if (sortCol < 14) {
-                        row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, styleTag)}`;
-                        row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, styleTag)}`;
+                        row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
+                        row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
                     }
                     lastYear = master2[i][6];
                     totalDebYear = 0;
                     totalCredYear = 0;
-                    row = `${row}${getYearRow(lastYear)}`;
+                    //row = `${row}${getYearRow(lastYear)}`;
                 }
+                if (lastMonth != master2[i][7] && sortCol < 13) {
+                    lastMonth = master2[i][7];
+                    row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
+                }
+
+
                 if (isDebit) {
                     totalDeb += value;
                     granTotalDeb += value;
                     totalDebYear += value;
-                    totalCredYear += value;
                 }
                 else {
                     totalCred += value;
                     granTotalCred += value;
+                    totalCredYear += value;
                 }
 
                 let r = `<div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
                     <div class="col-md-2" ${styleTag}>
-                        ${days[master2[i][9] + 1].substr(0, 2)} 
-                        ${months[master2[i][7]].substr(0, 3)}-${master2[i][8]}
+                        ${days[master2[i][9] + 1].substr(0, 2)} ${master2[i][8]}
                     </div>
                     <div class="col-md-5 fit-text" ${styleTag}>
                     ${concepto}
@@ -812,21 +860,21 @@
             }
         }
         if (sortCol < 14) {
-            row = `${row}${getTotalRow("Total Débitos", totalDebYear), styleTag}`;
-            row = `${row}${getTotalRow("Total Créditos", totalCredYear, styleTag, true)}`;
+            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
+            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
         }
 
         if (yearsInReport > 1 && sortCol < 14) {
-            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, styleTag)}`;
-            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, styleTag)}`;
+            row = `${row}${getTotalRow(`Total Débitos ${lastYear}`, totalDebYear, totalStyle,getLineStyle(i+1,true, diffBG))}`;
+            row = `${row}${getTotalRow(`Total Créditos ${lastYear}`, totalCredYear, totalStyle,getLineStyle(i+2,false, diffBG))}`;
         }
 
 
-        row = `${row}${getTotalRow("Gran Total Débitos", granTotalDeb, styleTag)}`;
-        row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, styleTag)}`;
+        row = `${row}${getTotalRow("Gran Total Débitos", granTotalDeb, totalStyle,getLineStyle(i+1,true, diffBG))}`;
+        row = `${row}${getTotalRow("Gran Total Créditos", granTotalCred, totalStyle,getLineStyle(i+2,false, diffBG))}`;
 
         writeInnerHtml("btnReport", "Reporte");
-        localStorage.setItem("reporte",row);
+        localStorage.setItem("reporte", row);
         writeInnerHtml("report", row);
         setFilterData();
     }
@@ -1130,13 +1178,12 @@
                 msg = response.messages[0];
             }
             showMessage(msg);
-            if( response.action == "REPORT")
-            {
+            if (response.action == "REPORT") {
                 master = response.master;
                 detail = response.detail;
-                if ( response.formId=="BROU")
+                if (response.formId == "BROU")
                     renderMaster();
-                if ( response.formId=="ANDA")
+                if (response.formId == "ANDA")
                     renderAnda();
             }
             else newRecord();
@@ -1369,12 +1416,12 @@
             .log(msg, data);
     }
 
-    function getFromCache(key,div)
-    {
+    function getFromCache(key, div) {
         let html = localStorage.getItem(key);
-        if ( html == null || html == undefined || html.length == 0)
+        if (html == null || html == undefined || html.length == 0)
             return false;
-        writeInnerHtml(div,html);
+        console.log(`getFromCache() ${key} div: ${div} length: ${html.length}`)
+        writeInnerHtml(div, html);
         return true;
     }
 
@@ -1389,11 +1436,10 @@
         recType = "REP";
         writeInnerHtml("title", "Reporte por Rango de Fechas");
 
-        if ( !getFromCache("content_REP","content"))
-        {
-        google.script.run.withFailureHandler(failureHandler)
-            .withSuccessHandler(processResponseLoadReportForm)
-            .getForm("report");
+        if (!getFromCache("content_REP", "content")) {
+            google.script.run.withFailureHandler(failureHandler)
+                .withSuccessHandler(processResponseLoadReportForm)
+                .getForm("report");
 
         }
         hideDiv("mainContent");
@@ -1463,7 +1509,7 @@
     }
 
     function onchange_RT2(e) {
-        console.log("onchange_RT2",e);
+        console.log("onchange_RT2", e);
         Data.update("REC_FILTER", e);
         recFilter = e;
         // if (recFilter == "BROU") {
@@ -1621,7 +1667,7 @@
 
 
             google.script.run.withFailureHandler(failureHandler).withSuccessHandler(processResponse)
-                .getForm("RT", recType, url);
+                .getForm(recType, "RT", url);
         }
         else {
             writeInnerHtml("content", html);
