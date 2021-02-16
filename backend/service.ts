@@ -516,29 +516,29 @@ export class Service {
                 if (dht.dt == null || dht.invalidDate)
                     continue;
 
-                    if (lastYear != dht.Y) {
-                        lastYear = dht.Y;
-                        fileName = `${recType}_${lastYear}_Data`;
-                        ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
-                        sheet = ss.getActiveSheet();
-                        range = sheet.getDataRange();
-                        lastColumn = range.getLastColumn();
-                        lastRow = range.getLastRow() + 1;
-                        //grid = range.getValues();
-            
-                        indexFileName = `${fileName}.index`;
-                        if (lastRow <= 2) {
-                            indexText = "";
+                if (lastYear != dht.Y) {
+                    lastYear = dht.Y;
+                    fileName = `${recType}_${lastYear}_Data`;
+                    ss = Utils.getCreateSpreadSheet(this.folder, fileName, "Master,Detail", data2.getColNames());
+                    sheet = ss.getActiveSheet();
+                    range = sheet.getDataRange();
+                    lastColumn = range.getLastColumn();
+                    lastRow = range.getLastRow() + 1;
+                    //grid = range.getValues();
+
+                    indexFileName = `${fileName}.index`;
+                    if (lastRow <= 2) {
+                        indexText = "";
+                        Utils.writeTextFile(indexFileName, indexText, this.folder);
+                    }
+                    else {
+                        if (indexText.length > 0) {
                             Utils.writeTextFile(indexFileName, indexText, this.folder);
                         }
-                        else {
-                            if (indexText.length > 0) {
-                                Utils.writeTextFile(indexFileName, indexText, this.folder);
-                            }
-                            indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
-                        }
+                        indexText = Utils.getTextFileFromFolder(this.folder, indexFileName);
                     }
-            
+                }
+
 
                 dt = dht.dt;
 
@@ -798,9 +798,11 @@ export class Service {
         let Data = new KVPCollection();
         let fileName = "";
         let recType = "";
+        let conceptos = ";"
         Data.arr = data.arr;
 
         recType = Data.get("REC_FILTER");
+        conceptos = Data.get("CONCEPTO");
 
         this.dtDesde = new DateHelper();
         this.dtDesde = this.dtDesde.getFromYMDHMS(Data.get("FECHA_DESDE"));
@@ -816,18 +818,27 @@ export class Service {
                 let sheet = ss.getSheetByName("Master");
 
                 //todo: temproary
-                if (recType == "ANDA")
-                    master = Utils.getData(ss, "Master", "S").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+                if (conceptos == "") {
+                    if (recType == "ANDA")
+                        master = Utils.getData(ss, "Master", "S").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+                    else
+                        master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
+                    if (master.length > 0)
+                        if (masters == null)
+                            masters = master;
+                        else
+                            masters = masters.concat(master);
+                }
+                else {
+                    if (recType == "ANDA")
+                    master = Utils.getData(ss, "Master", "S").filter(x => x[3] >= 
+                        this.dtDesde.days && x[3] <= this.dtHasta.days );
                 else
                     master = Utils.getData(ss, "Master").filter(x => x[3] >= this.dtDesde.days && x[3] <= this.dtHasta.days);
-                if (master.length > 0)
 
-                if ( masters == null)
-                    masters = master;
-                else 
-                    masters = masters.concat(master);
+                }
             }
-            else SysLog.log(0,"file not found",fileName);
+            else SysLog.log(0, "file not found", fileName);
 
         }
         response.detail = [[]];

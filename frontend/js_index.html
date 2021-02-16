@@ -39,6 +39,9 @@
     let sortCol = 5;
     let isDebit = false;
 
+    let sortAscending2 = ture;
+    let sortCol2 = 0;
+
     let days = "Todos,Dom,Lun,Mar,Mie,Jue,Vie,Sab,Dom".split(",");
     let dow = [
         [0, "Domingo"],
@@ -761,8 +764,9 @@
                 }
 
                 concepto = master2[i][13];
-                if (concepto.length > 20)
-                    concepto = `${concepto.substr(0, 17)}...`;
+                concepto = replace(concepto, "Comercio:", "C:");
+                if (concepto.length > 23)
+                    concepto = `${concepto.substr(0, 20)}...`;
 
                 isDebit = false;
                 if (master2[i][15].toString() == "") {
@@ -787,7 +791,7 @@
                 }
                 if (lastYear == 0) {
                     lastYear = master2[i][6];
-                    if ( breakRows > 1 )
+                    if (breakRows > 1)
                         row = `${row}${getMonthRow(lastYear, lastMonth, true)}`;
                 }
                 if (lastValue != master2[i][breakCol]) {
@@ -842,8 +846,8 @@
                 }
 
                 let fechaStr = `${days[master2[i][9] + 1].substr(0, 2)} ${master2[i][8]}`;
-                if (sortCol > 12 )
-                    fechaStr = `${master2[i][6].toString().substr(2,2)}-${master2[i][7]}-${master2[i][8]}`;
+                if (sortCol > 12)
+                    fechaStr = `${master2[i][6].toString().substr(2, 2)}-${master2[i][7]}-${master2[i][8]}`;
 
                 let r = `<div class="row"  onclick="openDetail('${recType}',${master2[i][1]})">
                     <div class="col-md-2" ${styleTag}>
@@ -1063,10 +1067,32 @@
     }
 
 
+    function sortFunction2(a, b) {
 
-    function getSelect(name, arr, idCol = 0, valueCol = 1, title = "", selectedValue = "", req = false, startRow = 0) {
+        if (a[sortCol2] === b[sortCol2]) {
+            return 0;
+        }
+        else {
+            if (sortDescending)
+                return (a[sortCol2] > b[sortCol2]) ? -1 : 1;
+            else
+                return (a[sortCol2] < b[sortCol2]) ? -1 : 1;
+
+        }
+
+    }
+
+    function getSelect(name, arr, idCol = 0, valueCol = 1, title = "", selectedValue = "",
+        req = false, startRow = 0, multiple = "", sort = "A") {
         let options = "";
         let required = "";
+
+        if (sort == "A" || sort == "D") {
+            sortAscending2 = sort == "A"
+            sortCol2 = valueCol;
+            arr = arr.sort(sortFunction2);
+        }
+
         let onChange = `onchange="onchange_${name}(this.options[this.selectedIndex].value)"`;
 
         if (title.length == 0)
@@ -1083,7 +1109,9 @@
                 options = `${options}<option value="${arr[i][idCol]}">${arr[i][valueCol]}</option>`
         }
 
-        let html = `<select name="SELECT_${name}" id="SELECT_${name}" ${required} ${onChange} class="big-font form-control">
+        let html = `<select name="SELECT_${name}" id="SELECT_${name}" 
+            ${required} ${onChange} 
+            class="big-font form-control" ${multiple}>
         ${options}</select>`
 
         return html;
@@ -1223,6 +1251,15 @@
             showDiv("spinner");
             subtitle = `<p class="text-into text-center">De: ${Data.get("FECHA_DESDE")} A: ${Data.get("FECHA_HASTA")}</p>`
             disableButtons(true);
+
+            var selected = "";
+            for (var option of document.getElementById('SELECT_CO').options) {
+                if (option.selected) {
+                    selected += `${option.value},`;
+                }
+                selected = selected.substr(0, selected.length - 1);
+            }
+            Data.update("CONCEPTO", selected)
             console.log("loadRepord() Data", Data);
             google.script.run.withFailureHandler(failureHandler)
                 .withSuccessHandler(processResponseReport)
@@ -1510,17 +1547,38 @@
     }
 
     function onchange_CO(e) {
-        Data.update("CONCEPTO", e);
+        console.log("onchange_CO", e);
+
+        //Data.update("CONCEPTO", e);
     }
+
+
+    function sortConceptos(value1, value2) {
+
+        if (value[4] == value1[4]) {
+            return 0;
+        }
+        else {
+            if (sortDescending)
+                return (value[4] > value1[4]) ? -1 : 1;
+            else
+                return (value[4] < value1[4]) ? -1 : 1;
+        }
+    }
+
 
     function onchange_RT2(e) {
         console.log("onchange_RT2", e);
         Data.update("REC_FILTER", e);
         recFilter = e;
-        // if (recFilter == "BROU") {
-        //     let htmlConcepto = getSelect("CO", Items.arr.filter(x => x[2] == `C${recType}`), 3, 4, "Concepto", "", true);
-        //     writeInnerHtml("SELECT_CONCEPTO", htmlConcepto);
-        // }
+
+        let arr = Items.arr.filter(x => x[2] == recFilter);
+
+
+
+        let htmlConcepto = getSelect("CO", arr, 0, 4, "Concepto", "", true, 0, "multiple");
+
+        writeInnerHtml("tipoConcepto", htmlConcepto);
 
 
     }
